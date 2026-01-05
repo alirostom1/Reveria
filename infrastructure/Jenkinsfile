@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Detect Changes') {
+            steps {
+                script {
+                    def changes = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
+
+                    env.BUILD_USER_SERVICE = changes.contains('user-service/') ? 'true' : 'false'
+
+                    echo "Changes: ${changes}"
+                }
+            }
+        }
+
+        stage('User Service') {
+            when { expression { env.BUILD_USER_SERVICE == 'true' } }
+            steps {
+                build job: 'user-service', wait: true
+            }
+        }
+    }
+}
