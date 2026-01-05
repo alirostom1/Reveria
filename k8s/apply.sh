@@ -7,3 +7,7 @@ kubectl apply -f k8s/infra/pgsql/deployment.yml
 kubectl apply -f k8s/infra/redis/pv.yml
 kubectl apply -f k8s/infra/redis/deployment.yml
 
+#KAFKA
+kubectl apply -f k8s/infra/kafka/pv.yml
+kubectl apply -f k8s/infra/kafka/deployment.yml
+
