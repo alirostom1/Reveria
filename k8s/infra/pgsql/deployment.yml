@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  namespace: reveria-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: postgresql-secret
+          volumeMounts:
+            - name: postgresql-storage
+              mountPath: /var/lib/postgresql/data
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: postgresql-storage
+          persistentVolumeClaim:
+            claimName: postgresql-pvc
+        - name: init-script
+          configMap:
+            name: postgresql-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: reveria-dev
+spec:
+  selector:
+    app: postgresql
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP
