@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: user-service
   profiles:
@@ -10,5 +12,39 @@ spring:
     properties:
       hibernate:
         show_sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+          facebook:
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
+            scope:
+              - email
+              - public_profile
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope:
+              - email
+              - name
+      provider:
+        facebook:
+          authorization-uri: https://www.facebook.com/v18.0/dialog/oauth
+          token-uri: https://graph.facebook.com/v18.0/oauth/access_token
+          user-info-uri: https://graph.facebook.com/v18.0/me?fields=id,name,email,picture
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 900000
+  refresh-token-expiration: 86400000
+security:
+  max-sessions-per-user: 5
+  max-sessions-per-moderator: 3
 server:
   port: 8080

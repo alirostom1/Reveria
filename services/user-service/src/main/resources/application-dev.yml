@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
   datasource:
     url: jdbc:postgresql://localhost:5432/user_db
     username: postgres
@@ -9,11 +11,3 @@ spring:
       port: 6379
   kafka:
     bootstrap-servers: localhost:9092
-
-jwt:
-  secret: O6R70T3Nsw3RrAPydVIpF30RGD1izIlfGwxhEMhS00K
-  access-token-expiration: 900000
-  refresh-token-expiration: 86400000
-security:
-  max-sessions-per-user: 5
-  max-sessions-per-moderator: 3

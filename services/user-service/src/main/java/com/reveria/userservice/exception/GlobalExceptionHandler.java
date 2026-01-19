@@ -21,8 +21,6 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    // VALIDATION
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Void>> handleValidation(
             MethodArgumentNotValidException ex,
@@ -43,8 +41,6 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("Validation failed", error));
     }
-
-    // AUTHENTICATION
 
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidCredentials(
@@ -106,8 +102,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Account is disabled", error));
     }
 
-    // JWT
-
     @ExceptionHandler(JwtAuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleJwtAuth(
             JwtAuthenticationException ex,
@@ -140,7 +134,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Session invalidated for security reasons. Please login again.", error));
     }
 
-    // REGISTRATION
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ApiResponse<Void>> handleEmailExists(
             EmailAlreadyExistsException ex,
@@ -173,8 +166,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Username already exists", error));
     }
 
-    // SESSION
-
     @ExceptionHandler(MaxSessionsExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxSessions(
             MaxSessionsExceededException ex,
@@ -190,7 +181,22 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Maximum number of active sessions reached", error));
     }
 
-    // GENERIC
+    @ExceptionHandler(OAuthException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOAuth(
+            OAuthException ex,
+            HttpServletRequest request
+    ) {
+        log.error("OAuth error for provider {}: {}", ex.getProvider(), ex.getMessage());
+
+        ApiError error = ApiError.builder()
+                .code("OAUTH_ERROR")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), error));
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
@@ -204,6 +210,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), error));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalState(
+            IllegalStateException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("ILLEGAL_STATE")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage(), error));
     }
 

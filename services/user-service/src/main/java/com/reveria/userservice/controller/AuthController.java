@@ -2,14 +2,17 @@ package com.reveria.userservice.controller;
 
 import com.reveria.userservice.dto.SessionInfo;
 import com.reveria.userservice.dto.request.LoginRequest;
+import com.reveria.userservice.dto.request.OAuthLoginRequest;
 import com.reveria.userservice.dto.request.RefreshTokenRequest;
 import com.reveria.userservice.dto.request.RegisterRequest;
 import com.reveria.userservice.dto.response.ApiResponse;
 import com.reveria.userservice.dto.response.AuthResponse;
 import com.reveria.userservice.dto.response.SessionResponse;
+import com.reveria.userservice.model.enums.ProviderType;
 import com.reveria.userservice.security.JWTService;
 import com.reveria.userservice.security.UserPrincipal;
 import com.reveria.userservice.service.AuthService;
+import com.reveria.userservice.service.OAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +30,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final JWTService jwtService;
+    private final OAuthService oAuthService;
 
     //  PUBLIC ENDPOINTS
 
@@ -84,9 +88,11 @@ public class AuthController {
 
     @GetMapping("/sessions")
     public ResponseEntity<ApiResponse<List<SessionResponse>>> getActiveSessions(
-            @AuthenticationPrincipal UserPrincipal principal,
-            @RequestHeader(value = "X-Family-Id", required = false) String currentFamilyId
+            @RequestHeader("Authorization") String authHeader,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
+        String accessToken = authHeader.substring(7);
+        String currentFamilyId = jwtService.extractFamilyId(accessToken);
         List<SessionResponse> sessions = authService.getActiveSessions(
                 principal.getUser().getId(),
                 currentFamilyId
@@ -116,6 +122,44 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(userInfo));
+    }
+
+    @PostMapping("/oauth")
+    public ResponseEntity<ApiResponse<AuthResponse>> oauthLogin(
+            @Valid @RequestBody OAuthLoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        SessionInfo sessionInfo = extractSessionInfo(httpRequest);
+        AuthResponse response = oAuthService.authenticate(
+                request.getProvider(),
+                request.getCode(),
+                request.getRedirectUri(),
+                sessionInfo
+        );
+        return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
+    }
+
+    @PostMapping("/oauth/link")
+    public ResponseEntity<ApiResponse<Void>> linkProvider(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody OAuthLoginRequest request
+    ) {
+        oAuthService.linkProvider(
+                principal.getUser().getId(),
+                request.getProvider(),
+                request.getCode(),
+                request.getRedirectUri()
+        );
+        return ResponseEntity.ok(ApiResponse.success("Provider linked successfully"));
+    }
+
+    @DeleteMapping("/oauth/{provider}")
+    public ResponseEntity<ApiResponse<Void>> unlinkProvider(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable ProviderType provider
+    ) {
+        oAuthService.unlinkProvider(principal.getUser().getId(), provider);
+        return ResponseEntity.ok(ApiResponse.success("Provider unlinked successfully"));
     }
 
     // HELPER
