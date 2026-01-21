@@ -1,10 +1,12 @@
 package com.reveria.userservice.service;
 
 import com.reveria.userservice.dto.SessionInfo;
-import com.reveria.userservice.dto.request.LoginRequest;
-import com.reveria.userservice.dto.request.RegisterRequest;
+import com.reveria.userservice.dto.request.auth.LoginRequest;
+import com.reveria.userservice.dto.request.auth.RegisterRequest;
 import com.reveria.userservice.dto.response.AuthResponse;
 import com.reveria.userservice.dto.response.SessionResponse;
+import com.reveria.userservice.exception.InvalidCredentialsException;
+import com.reveria.userservice.exception.PasswordMismatchException;
 import com.reveria.userservice.model.entity.RefreshToken;
 import com.reveria.userservice.model.entity.User;
 import com.reveria.userservice.model.enums.AccountType;
@@ -42,6 +44,7 @@ public class AuthService {
     private final UserMapper userMapper;
     private final AuthMapper authMapper;
     private final SessionMapper sessionMapper;
+    private final EmailVerificationService emailVerificationService;
 
     //REGISTER
 
@@ -66,6 +69,7 @@ public class AuthService {
 
         user = userRepository.save(user);
         log.info("New user registered: {}", user.getUsername());
+        emailVerificationService.sendVerificationEmail(user);
 
         return generateAuthResponse(user, sessionInfo, false);
     }
@@ -149,6 +153,46 @@ public class AuthService {
 
         refreshTokenService.revokeSession(familyId);
         log.info("Session revoked: {} for user: {}", familyId, userId);
+    }
+
+    @Transactional
+    public void changePassword(Long userId, String familyId, String currentPassword, String newPassword, boolean revokeOtherSessions) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        boolean isOAuthOnlyUser = user.getPasswordHash() == null;
+
+        if (isOAuthOnlyUser) {
+            if (currentPassword != null && !currentPassword.isBlank()) {
+                throw new IllegalArgumentException("Current password not required for OAuth users");
+            }
+        } else {
+            if (currentPassword == null || currentPassword.isBlank()) {
+                throw new IllegalArgumentException("Current password is required");
+            }
+            if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+                throw new PasswordMismatchException();
+            }
+
+            if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+                throw new IllegalArgumentException("New password must be different from current password");
+            }
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        if (revokeOtherSessions) {
+            revokeOtherSessions(userId, familyId);
+        }
+        log.info("Password changed for user: {}", user.getUsername());
+    }
+    private void revokeOtherSessions(Long userId, String currentFamilyId) {
+        List<RefreshToken> sessions = refreshTokenService.getActiveSessions(userId);
+
+        sessions.stream()
+                .filter(session -> !session.getFamilyId().equals(currentFamilyId))
+                .forEach(session -> refreshTokenService.revokeSession(session.getFamilyId()));
+        log.info("Revoked {} other sessions for user: {}", sessions.size() - 1, userId);
     }
 
     private AuthResponse generateAuthResponse(User user, SessionInfo sessionInfo, boolean rememberMe) {

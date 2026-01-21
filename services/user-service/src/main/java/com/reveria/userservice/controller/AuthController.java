@@ -1,10 +1,7 @@
 package com.reveria.userservice.controller;
 
 import com.reveria.userservice.dto.SessionInfo;
-import com.reveria.userservice.dto.request.LoginRequest;
-import com.reveria.userservice.dto.request.OAuthLoginRequest;
-import com.reveria.userservice.dto.request.RefreshTokenRequest;
-import com.reveria.userservice.dto.request.RegisterRequest;
+import com.reveria.userservice.dto.request.auth.*;
 import com.reveria.userservice.dto.response.ApiResponse;
 import com.reveria.userservice.dto.response.AuthResponse;
 import com.reveria.userservice.dto.response.SessionResponse;
@@ -12,7 +9,9 @@ import com.reveria.userservice.model.enums.ProviderType;
 import com.reveria.userservice.security.JWTService;
 import com.reveria.userservice.security.UserPrincipal;
 import com.reveria.userservice.service.AuthService;
+import com.reveria.userservice.service.EmailVerificationService;
 import com.reveria.userservice.service.OAuthService;
+import com.reveria.userservice.service.PasswordResetService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +27,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final PasswordResetService passwordResetService;
+
+
     private final AuthService authService;
     private final JWTService jwtService;
     private final OAuthService oAuthService;
+    private final EmailVerificationService emailVerificationService;
 
     //  PUBLIC ENDPOINTS
 
@@ -123,7 +126,7 @@ public class AuthController {
 
         return ResponseEntity.ok(ApiResponse.success(userInfo));
     }
-
+    // OAUTH ENDPOINTS
     @PostMapping("/oauth")
     public ResponseEntity<ApiResponse<AuthResponse>> oauthLogin(
             @Valid @RequestBody OAuthLoginRequest request,
@@ -160,6 +163,74 @@ public class AuthController {
     ) {
         oAuthService.unlinkProvider(principal.getUser().getId(), provider);
         return ResponseEntity.ok(ApiResponse.success("Provider unlinked successfully"));
+    }
+
+    // PASSWORD ENDPOINTS
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ) {
+        passwordResetService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("If the email exists, a reset link has been sent"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ) {
+        passwordResetService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful"));
+    }
+
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<ApiResponse<Boolean>> validateResetToken(
+            @RequestParam String token
+    ) {
+        boolean valid = passwordResetService.validateToken(token);
+        return ResponseEntity.ok(ApiResponse.success(valid));
+    }
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody ChangePasswordRequest request
+    ){
+        String accessToken = authHeader.substring(7);
+        String currentFamilyId = jwtService.extractFamilyId(accessToken);
+        authService.changePassword(
+                principal.getUser().getId(),
+                currentFamilyId,
+                request.getCurrentPassword(),
+                request.getNewPassword(),
+                request.isRevokeOtherSessions()
+        );
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
+    }
+
+    // EMAIL VERIFICATION
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request
+    ) {
+        emailVerificationService.verifyEmail(request.getToken());
+        return ResponseEntity.ok(ApiResponse.success("Email verified successfully"));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<ApiResponse<Void>> resendVerification(
+            @Valid @RequestBody ResendVerificationRequest request
+    ) {
+        emailVerificationService.resendVerificationEmail(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success("If the email exists and is unverified, a verification link has been sent"));
+    }
+
+    @GetMapping("/verify-email/validate")
+    public ResponseEntity<ApiResponse<Boolean>> validateVerificationToken(
+            @RequestParam String token
+    ) {
+        boolean valid = emailVerificationService.validateToken(token);
+        return ResponseEntity.ok(ApiResponse.success(valid));
     }
 
     // HELPER

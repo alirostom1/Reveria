@@ -198,6 +198,37 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), error));
     }
 
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidToken(
+            InvalidTokenException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("INVALID_TOKEN")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), error));
+    }
+
+    @ExceptionHandler(PasswordMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePasswordMismatch(
+            PasswordMismatchException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("PASSWORD_MISMATCH")
+                .path(request.getRequestURI())
+                .fields(Map.of("currentPassword", "Current password is incorrect"))
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), error));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
             IllegalArgumentException ex,

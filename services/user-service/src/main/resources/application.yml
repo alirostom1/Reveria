@@ -12,6 +12,28 @@ spring:
     properties:
       hibernate:
         show_sql: true
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
+
   security:
     oauth2:
       client:
@@ -46,5 +68,14 @@ jwt:
 security:
   max-sessions-per-user: 5
   max-sessions-per-moderator: 3
+  password-reset-expiration-hours: 1
+  email-verification-expiration-hours: 24
 server:
   port: 8080
+
+app:
+  name: Reveria
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  mail:
+    from: ${MAIL_FROM:noreply@reveria.com}
+    from-name: ${MAIL_FROM_NAME:Reveria}

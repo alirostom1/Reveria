@@ -48,7 +48,11 @@ public class SecurityConfig {
                                 "/api/auth/refresh",
                                 "/api/auth/oauth",
                                 "/api/auth/forgot-password",
-                                "/api/auth/reset-password"
+                                "/api/auth/reset-password",
+                                "/api/auth/reset-password/validate",
+                                "/api/auth/verify-email",
+                                "/api/auth/verify-email/validate",
+                                "/api/auth/resend-verification"
                         ).permitAll()
                         // Actuator endpoints
                         .requestMatchers("/actuator/**").permitAll()

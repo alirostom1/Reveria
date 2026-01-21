@@ -1,4 +1,4 @@
-package com.reveria.userservice.dto.request;
+package com.reveria.userservice.dto.request.auth;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

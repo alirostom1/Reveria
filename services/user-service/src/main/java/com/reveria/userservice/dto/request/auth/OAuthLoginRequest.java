@@ -1,4 +1,4 @@
-package com.reveria.userservice.dto.request;
+package com.reveria.userservice.dto.request.auth;
 
 import com.reveria.userservice.model.enums.ProviderType;
 import jakarta.validation.constraints.NotBlank;

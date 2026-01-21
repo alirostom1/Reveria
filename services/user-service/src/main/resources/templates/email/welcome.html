@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome!</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
+<table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+        <td style="padding: 40px 0;">
+            <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <!-- Header -->
+                <tr>
+                    <td style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🎉 Welcome!</h1>
+                    </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                    <td style="padding: 40px 30px;">
+                        <h2 style="color: #333333; margin: 0 0 20px 0; font-size: 24px;">
+                            Welcome to <span th:text="${appName}">Reveria</span>, <span th:text="${username}">User</span>!
+                        </h2>
+
+                        <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                            Your email has been verified and your account is now active. You're all set to start exploring!
+                        </p>
+
+                        <p style="color: #666666; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                            Here's what you can do next:
+                        </p>
+
+                        <ul style="color: #666666; font-size: 16px; line-height: 1.8; margin: 0 0 30px 0; padding-left: 20px;">
+                            <li>Complete your profile</li>
+                            <li>Connect with friends</li>
+                            <li>Explore the community</li>
+                        </ul>
+
+                        <table role="presentation" style="margin: 0 auto 30px auto;">
+                            <tr>
+                                <td style="border-radius: 6px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                    <a th:href="${loginLink}" style="display: inline-block; padding: 16px 36px; font-size: 16px; color: #ffffff; text-decoration: none; font-weight: 600;">
+                                        Get Started
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <p style="color: #999999; font-size: 14px; line-height: 1.6; margin: 0;">
+                            Need help? Contact us at support@reveria.com
+                        </p>
+                    </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                    <td style="background-color: #f8f9fa; padding: 30px; text-align: center;">
+                        <p style="color: #999999; font-size: 12px; margin: 0;">
+                            © 2025 <span th:text="${appName}">Reveria</span>. All rights reserved.
+                        </p>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

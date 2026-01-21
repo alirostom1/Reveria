@@ -1,6 +1,6 @@
 package com.reveria.userservice.mapper;
 
-import com.reveria.userservice.dto.request.RegisterRequest;
+import com.reveria.userservice.dto.request.auth.RegisterRequest;
 import com.reveria.userservice.dto.response.AuthResponse;
 import com.reveria.userservice.model.entity.User;
 import org.mapstruct.Mapper;
