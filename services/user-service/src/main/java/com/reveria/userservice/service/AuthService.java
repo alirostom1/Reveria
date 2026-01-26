@@ -63,7 +63,7 @@ public class AuthService {
         user.setUsername(request.getUsername().toLowerCase());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setDisplayName(request.getDisplayName() != null ? request.getDisplayName() : request.getUsername());
-        user.setStatus(UserStatus.ACTIVE);
+        user.setStatus(UserStatus.PENDING_VERIFICATION);
         user.setEmailVerified(false);
         user.setLastLoginAt(LocalDateTime.now());
 

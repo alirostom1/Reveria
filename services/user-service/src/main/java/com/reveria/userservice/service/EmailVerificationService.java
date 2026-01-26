@@ -3,6 +3,7 @@ package com.reveria.userservice.service;
 import com.reveria.userservice.model.entity.EmailVerificationToken;
 import com.reveria.userservice.model.entity.User;
 import com.reveria.userservice.exception.InvalidTokenException;
+import com.reveria.userservice.model.enums.UserStatus;
 import com.reveria.userservice.repository.EmailVerificationTokenRepository;
 import com.reveria.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -108,6 +109,7 @@ public class EmailVerificationService {
         }
 
         user.setEmailVerified(true);
+        user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
 
         verificationToken.setUsed(true);
