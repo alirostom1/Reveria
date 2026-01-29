@@ -21,8 +21,7 @@ import com.reveria.userservice.security.JWTService;
 import com.reveria.userservice.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -45,6 +44,7 @@ public class AuthService {
     private final AuthMapper authMapper;
     private final SessionMapper sessionMapper;
     private final EmailVerificationService emailVerificationService;
+    private final LoginAttemptService loginAttemptService;
 
     //REGISTER
 
@@ -78,22 +78,52 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request, SessionInfo sessionInfo) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getIdentifier(),
-                        request.getPassword()
-                )
-        );
+        String identifier = request.getIdentifier();
 
-        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
-        User user = principal.getUser();
+        loginAttemptService.checkLoginAllowed(identifier, sessionInfo.ipAddress());
 
-        user.setLastLoginAt(LocalDateTime.now());
-        userRepository.save(user);
+        try{
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getIdentifier(),
+                            request.getPassword()
+                    )
+            );
+            UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+            User user = principal.getUser();
 
-        log.info("User logged in: {}", user.getUsername());
+            loginAttemptService.recordSuccessfulLogin(
+                    identifier,
+                    sessionInfo.ipAddress(),
+                    sessionInfo.userAgent(),
+                    AccountType.USER
+            );
 
-        return generateAuthResponse(user, sessionInfo, request.isRememberMe());
+            user.setLastLoginAt(LocalDateTime.now());
+            userRepository.save(user);
+
+            log.info("User logged in: {}", user.getUsername());
+
+            return generateAuthResponse(user, sessionInfo, request.isRememberMe());
+        } catch (BadCredentialsException e) {
+            loginAttemptService.recordFailedLogin(
+                    identifier,
+                    sessionInfo.ipAddress(),
+                    sessionInfo.userAgent(),
+                    AccountType.USER,
+                    "Invalid credentials"
+            );
+            throw e;
+        } catch (LockedException | DisabledException e) {
+            loginAttemptService.recordFailedLogin(
+                    identifier,
+                    sessionInfo.ipAddress(),
+                    sessionInfo.userAgent(),
+                    AccountType.USER,
+                    e.getMessage()
+            );
+            throw e;
+        }
     }
 
     //REFRESH TOKEN

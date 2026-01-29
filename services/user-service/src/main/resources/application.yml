@@ -70,6 +70,15 @@ security:
   max-sessions-per-moderator: 3
   password-reset-expiration-hours: 1
   email-verification-expiration-hours: 24
+  rate-limit:
+    max-failed-attempts: 5
+    lockout-duration-minutes: 15
+    max-failed-attempts-per-ip: 20
+    ip-block-duration-minutes: 30
+    attempt-window-minutes: 60
+    attempt-retention-days: 7
+
+
 server:
   port: 8080
 

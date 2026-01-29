@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestControllerAdvice
@@ -226,6 +227,42 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), error));
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccountLocked(
+            AccountLockedException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("ACCOUNT_LOCKED")
+                .path(request.getRequestURI())
+                .details(List.of(
+                        "Account is temporarily locked due to too many failed login attempts",
+                        "Try again in " + ex.getRemainingMinutes() + " minutes"
+                ))
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Account is temporarily locked", error));
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTooManyRequests(
+            TooManyRequestsException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("TOO_MANY_REQUESTS")
+                .path(request.getRequestURI())
+                .details(List.of("Try again in " + ex.getRetryAfterMinutes() + " minutes"))
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(ex.getRetryAfterMinutes() * 60))
                 .body(ApiResponse.error(ex.getMessage(), error));
     }
 
