@@ -41,7 +41,6 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
                         .requestMatchers(
                                 "/api/auth/register",
                                 "/api/auth/login",
@@ -52,9 +51,11 @@ public class SecurityConfig {
                                 "/api/auth/reset-password/validate",
                                 "/api/auth/verify-email",
                                 "/api/auth/verify-email/validate",
-                                "/api/auth/resend-verification"
+                                "/api/auth/resend-verification",
+                                "/api/mod/auth/login",
+                                "/api/mod/auth/refresh"
                         ).permitAll()
-                        // Actuator endpoints
+                        .requestMatchers("/api/mod/**").hasRole("MODERATOR")
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )

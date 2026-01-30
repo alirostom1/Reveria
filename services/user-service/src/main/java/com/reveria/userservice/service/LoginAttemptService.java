@@ -34,6 +34,8 @@ import java.time.LocalDateTime;
  * - On successful login, the attempt is recorded (for audit purposes)
  * - On failed login, the attempt is recorded with the failure reason
  * - Old records are cleaned up daily to prevent database bloat
+ *
+ * NB: You can adjust nb of attempts and time window as you like in application.properties
  */
 @Service
 @RequiredArgsConstructor

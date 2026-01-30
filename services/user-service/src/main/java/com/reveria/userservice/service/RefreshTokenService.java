@@ -250,6 +250,10 @@ public class RefreshTokenService {
         return refreshTokenRepository.findActiveSessionsByUserId(userId, LocalDateTime.now());
     }
 
+    public List<RefreshToken> getActiveModeratorSessions(Long moderatorId) {
+        return refreshTokenRepository.findActiveSessionsByModeratorId(moderatorId, LocalDateTime.now());
+    }
+
     public int getActiveSessionCount(Long userId) {
         return refreshTokenRepository.countActiveSessionsByUserId(userId, LocalDateTime.now());
     }

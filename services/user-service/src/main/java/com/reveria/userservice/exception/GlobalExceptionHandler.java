@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -294,6 +295,36 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage(), error));
+    }
+
+    @ExceptionHandler(ModeratorAccountDeactivatedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleModeratorDeactivated(
+            ModeratorAccountDeactivatedException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("MODERATOR_ACCOUNT_DEACTIVATED")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Moderator account is deactivated", error));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .code("ACCESS_DENIED")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Access denied", error));
     }
 
     @ExceptionHandler(Exception.class)

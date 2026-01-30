@@ -1,6 +1,8 @@
 package com.reveria.userservice.security;
 
+import com.reveria.userservice.model.entity.Moderator;
 import com.reveria.userservice.model.entity.User;
+import com.reveria.userservice.repository.ModeratorRepository;
 import com.reveria.userservice.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final ModeratorRepository moderatorRepository;
 
     @Override
     public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
@@ -28,5 +31,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + uuid));
 
         return new UserPrincipal(user);
+    }
+
+    public UserDetails loadModeratorByUuid(String uuid) {
+        Moderator moderator = moderatorRepository.findByUuid(uuid)
+                .orElseThrow(() -> new UsernameNotFoundException("Moderator not found: " + uuid));
+
+        return new ModeratorPrincipal(moderator);
     }
 }

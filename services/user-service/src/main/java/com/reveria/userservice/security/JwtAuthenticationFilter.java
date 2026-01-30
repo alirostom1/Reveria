@@ -1,12 +1,13 @@
 package com.reveria.userservice.security;
 
+import com.reveria.userservice.model.enums.AccountType;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.NonNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,8 +28,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
@@ -44,9 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             jwtService.validateAccessToken(jwt);
 
             final String uuid = jwtService.extractUuid(jwt);
+            final AccountType accountType = jwtService.extractAccountType(jwt);
 
             if (uuid != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUuid(uuid);
+                UserDetails userDetails = accountType == AccountType.MODERATOR
+                        ? userDetailsService.loadModeratorByUuid(uuid)
+                        : userDetailsService.loadUserByUuid(uuid);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
