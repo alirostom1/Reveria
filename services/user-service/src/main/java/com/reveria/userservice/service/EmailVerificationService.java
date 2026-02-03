@@ -3,6 +3,7 @@ package com.reveria.userservice.service;
 import com.reveria.userservice.model.entity.EmailVerificationToken;
 import com.reveria.userservice.model.entity.User;
 import com.reveria.userservice.exception.InvalidTokenException;
+import com.reveria.userservice.model.enums.UserEventType;
 import com.reveria.userservice.model.enums.UserStatus;
 import com.reveria.userservice.repository.EmailVerificationTokenRepository;
 import com.reveria.userservice.repository.UserRepository;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -26,6 +28,7 @@ public class EmailVerificationService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final UserEventPublisher userEventPublisher;
 
     @Value("${security.email-verification-expiration-hours:24}")
     private int tokenExpirationHours;
@@ -118,6 +121,8 @@ public class EmailVerificationService {
         emailService.sendWelcomeEmail(user.getEmail(), user.getDisplayName());
 
         log.info("Email verified for user: {}", user.getUsername());
+        userEventPublisher.publish(UserEventType.USER_EMAIL_VERIFIED, user.getUuid(),
+                Map.of("email", user.getEmail()));
     }
 
 

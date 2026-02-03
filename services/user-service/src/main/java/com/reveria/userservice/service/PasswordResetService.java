@@ -2,6 +2,7 @@ package com.reveria.userservice.service;
 
 import com.reveria.userservice.model.entity.PasswordResetToken;
 import com.reveria.userservice.model.entity.User;
+import com.reveria.userservice.model.enums.UserEventType;
 import com.reveria.userservice.exception.InvalidTokenException;
 import com.reveria.userservice.repository.PasswordResetTokenRepository;
 import com.reveria.userservice.repository.UserRepository;
@@ -28,6 +29,7 @@ public class PasswordResetService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final UserEventPublisher userEventPublisher;
 
     @Value("${security.password-reset-expiration-hours:1}")
     private int tokenExpirationHours;
@@ -99,6 +101,7 @@ public class PasswordResetService {
         refreshTokenService.revokeAllUserSessions(user.getId());
 
         log.info("Password reset successful for user: {}", user.getUsername());
+        userEventPublisher.publish(UserEventType.USER_PASSWORD_CHANGED, user.getUuid(), null);
     }
 
 

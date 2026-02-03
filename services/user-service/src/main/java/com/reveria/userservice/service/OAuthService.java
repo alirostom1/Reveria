@@ -8,6 +8,7 @@ import com.reveria.userservice.model.entity.RefreshToken;
 import com.reveria.userservice.model.entity.User;
 import com.reveria.userservice.model.enums.AccountType;
 import com.reveria.userservice.model.enums.ProviderType;
+import com.reveria.userservice.model.enums.UserEventType;
 import com.reveria.userservice.model.enums.UserStatus;
 import com.reveria.userservice.exception.OAuthException;
 import com.reveria.userservice.mapper.AuthMapper;
@@ -49,6 +50,7 @@ public class OAuthService {
     private final AuthMapper authMapper;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final RestTemplate restTemplate;
+    private final UserEventPublisher userEventPublisher;
 
     private final DefaultOAuth2UserService oAuth2UserService = new DefaultOAuth2UserService();
 
@@ -56,6 +58,8 @@ public class OAuthService {
     public AuthResponse authenticate(ProviderType provider, String code, String redirectUri, SessionInfo sessionInfo) {
         OAuthUserInfo userInfo = getUserInfo(provider, code, redirectUri);
         User user = findOrCreateUser(userInfo);
+        userEventPublisher.publish(UserEventType.USER_LOGGED_IN, user.getUuid(),
+                Map.of("ipAddress", sessionInfo.ipAddress(), "provider", provider.name()));
         return generateAuthResponse(user, sessionInfo);
     }
 
@@ -250,6 +254,9 @@ public class OAuthService {
         linkProvider(user, userInfo);
 
         log.info("New OAuth user created: {} via {}", user.getUsername(), userInfo.getProvider());
+        userEventPublisher.publish(UserEventType.USER_REGISTERED, user.getUuid(),
+                Map.of("email", user.getEmail(), "username", user.getUsername(),
+                        "provider", userInfo.getProvider().name()));
         return user;
     }
 
@@ -332,6 +339,8 @@ public class OAuthService {
         }
 
         linkProvider(user, userInfo);
+        userEventPublisher.publish(UserEventType.USER_OAUTH_LINKED, user.getUuid(),
+                Map.of("provider", provider.name()));
     }
 
     @Transactional
@@ -350,5 +359,7 @@ public class OAuthService {
         userRepository.save(user);
 
         log.info("Unlinked {} provider from user: {}", provider, user.getUsername());
+        userEventPublisher.publish(UserEventType.USER_OAUTH_UNLINKED, user.getUuid(),
+                Map.of("provider", provider.name()));
     }
 }

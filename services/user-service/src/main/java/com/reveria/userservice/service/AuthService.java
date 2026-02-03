@@ -10,6 +10,7 @@ import com.reveria.userservice.exception.PasswordMismatchException;
 import com.reveria.userservice.model.entity.RefreshToken;
 import com.reveria.userservice.model.entity.User;
 import com.reveria.userservice.model.enums.AccountType;
+import com.reveria.userservice.model.enums.UserEventType;
 import com.reveria.userservice.model.enums.UserStatus;
 import com.reveria.userservice.exception.EmailAlreadyExistsException;
 import com.reveria.userservice.exception.UsernameAlreadyExistsException;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +47,7 @@ public class AuthService {
     private final SessionMapper sessionMapper;
     private final EmailVerificationService emailVerificationService;
     private final LoginAttemptService loginAttemptService;
+    private final UserEventPublisher userEventPublisher;
 
     //REGISTER
 
@@ -69,6 +72,8 @@ public class AuthService {
 
         user = userRepository.save(user);
         log.info("New user registered: {}", user.getUsername());
+        userEventPublisher.publish(UserEventType.USER_REGISTERED, user.getUuid(),
+                Map.of("email", user.getEmail(), "username", user.getUsername()));
         emailVerificationService.sendVerificationEmail(user);
 
         return generateAuthResponse(user, sessionInfo, false);
@@ -103,6 +108,8 @@ public class AuthService {
             userRepository.save(user);
 
             log.info("User logged in: {}", user.getUsername());
+            userEventPublisher.publish(UserEventType.USER_LOGGED_IN, user.getUuid(),
+                    Map.of("ipAddress", sessionInfo.ipAddress(), "provider", "LOCAL"));
 
             return generateAuthResponse(user, sessionInfo, request.isRememberMe());
         } catch (BadCredentialsException e) {
@@ -215,6 +222,7 @@ public class AuthService {
             revokeOtherSessions(userId, familyId);
         }
         log.info("Password changed for user: {}", user.getUsername());
+        userEventPublisher.publish(UserEventType.USER_PASSWORD_CHANGED, user.getUuid(), null);
     }
     private void revokeOtherSessions(Long userId, String currentFamilyId) {
         List<RefreshToken> sessions = refreshTokenService.getActiveSessions(userId);
