@@ -9,11 +9,14 @@ import com.reveria.userservice.dto.response.PrivacySettingsResponse;
 import com.reveria.userservice.dto.response.UserProfileResponse;
 import com.reveria.userservice.security.UserPrincipal;
 import com.reveria.userservice.service.ProfileService;
+import com.reveria.userservice.util.FileValidationUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -43,12 +46,13 @@ public class ProfileController {
     }
 
 
-    @PostMapping("/me/avatar")
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateAvatar(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestBody String avatarUrl
+            @RequestParam("file") MultipartFile file
     ) {
-        UserProfileResponse profile = profileService.updateAvatar(principal.getUser().getId(), avatarUrl);
+        FileValidationUtil.validateAvatar(file);
+        UserProfileResponse profile = profileService.updateAvatar(principal.getUser().getId(), file);
         return ResponseEntity.ok(ApiResponse.success(profile, "Avatar updated successfully"));
     }
 
