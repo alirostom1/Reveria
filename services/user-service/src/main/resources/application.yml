@@ -1,0 +1,106 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: user-service
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+  datasource:
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false
+
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      retries: 3
+      acks: 1
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+          facebook:
+            client-id: ${FACEBOOK_CLIENT_ID}
+            client-secret: ${FACEBOOK_CLIENT_SECRET}
+            scope:
+              - email
+              - public_profile
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope:
+              - email
+              - name
+      provider:
+        facebook:
+          authorization-uri: https://www.facebook.com/v18.0/dialog/oauth
+          token-uri: https://graph.facebook.com/v18.0/oauth/access_token
+          user-info-uri: https://graph.facebook.com/v18.0/me?fields=id,name,email,picture
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 900000
+  refresh-token-expiration: 86400000
+security:
+  max-sessions-per-user: 5
+  max-sessions-per-moderator: 3
+  password-reset-expiration-hours: 1
+  email-verification-expiration-hours: 24
+  rate-limit:
+    max-failed-attempts: 5
+    lockout-duration-minutes: 15
+    max-failed-attempts-per-ip: 20
+    ip-block-duration-minutes: 30
+    attempt-window-minutes: 60
+    attempt-retention-days: 7
+
+storage:
+  minio:
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:reveria-avatars}
+
+server:
+  port: 8080
+
+kafka:
+  topic:
+    user-events: user-events
+
+app:
+  name: Reveria
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  mail:
+    from: ${MAIL_FROM:noreply@reveria.com}
+    from-name: ${MAIL_FROM_NAME:Reveria}

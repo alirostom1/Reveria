@@ -16,17 +16,26 @@ spec:
       serviceAccountName: jenkins
       containers:
         - name: jenkins
-          image: jenkins/jenkins:lts
+          image: reveria/jenkins:latest
+          imagePullPolicy: Never
+          securityContext:
+            runAsUser: 0
           ports:
             - containerPort: 8080
             - containerPort: 50000
           volumeMounts:
             - name: jenkins-storage
               mountPath: /var/jenkins_home
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
       volumes:
         - name: jenkins-storage
           persistentVolumeClaim:
             claimName: jenkins-pvc
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
 ---
 apiVersion: v1
 kind: Service

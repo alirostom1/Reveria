@@ -1,0 +1,1319 @@
+{
+  "info": {
+    "_postman_id": "reveria-user-service-collection",
+    "name": "Reveria — User Service",
+    "description": "Complete API collection for the Reveria User Service.\n\n## Getting Started\n\n1. **Import** this collection and the companion environment file.\n2. **Start the service** with the `dev` profile — the `DevDataSeeder` will create test accounts automatically.\n3. **Run the \"User Auth\" folder first** — the login request stores tokens in collection variables so subsequent requests are authenticated.\n\n## Seeded Dev Accounts\n\n| Type | Identifier | Password |\n|------|-----------|----------|\n| User | `john` / `john@example.com` | `password123` |\n| User | `jane` / `jane@example.com` | `password123` |\n| User | `alex` / `alex@example.com` | `password123` (unverified) |\n| User | `sam` / `sam@example.com` | `password123` (deactivated) |\n| User | `pat` / `pat@example.com` | `password123` |\n| Super Admin | `superadmin` | `password123` |\n| Moderator | `mod_alice` | `password123` |\n| Moderator | `mod_bob` | `password123` |\n| Moderator | `mod_charlie` | `password123` (deactivated) |\n\n## Automation\n\nEvery request includes test scripts that:\n- Assert the expected HTTP status code\n- Validate the `ApiResponse` envelope (`success`, `message`, `data`, `timestamp`)\n- Automatically capture and store tokens so the collection can be run end-to-end with the Collection Runner\n\n## Folder Run Order\n\n1. User Auth\n2. User Profile\n3. Moderator Auth\n4. Moderator Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "userUuid", "value": "", "type": "string" },
+    { "key": "modAccessToken", "value": "", "type": "string" },
+    { "key": "modRefreshToken", "value": "", "type": "string" },
+    { "key": "adminAccessToken", "value": "", "type": "string" },
+    { "key": "adminRefreshToken", "value": "", "type": "string" },
+    { "key": "modUuid", "value": "", "type": "string" },
+    { "key": "sessionFamilyId", "value": "", "type": "string" },
+    { "key": "modSessionFamilyId", "value": "", "type": "string" },
+    { "key": "createdModUuid", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "User Auth",
+      "description": "User registration, login, sessions, password management, and email verification.\n\nRun these requests in order — the login request auto-stores tokens for downstream requests.",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"password123\",\n  \"displayName\": \"New User\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Contains access token', () => pm.expect(res.data.accessToken).to.be.a('string'));",
+                  "pm.test('Contains refresh token', () => pm.expect(res.data.refreshToken).to.be.a('string'));",
+                  "pm.test('Contains user info', () => {",
+                  "    pm.expect(res.data.user).to.have.property('uuid');",
+                  "    pm.expect(res.data.user).to.have.property('email');",
+                  "    pm.expect(res.data.user).to.have.property('username');",
+                  "});",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "    if (res.data.user) pm.collectionVariables.set('userUuid', res.data.user.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (seeded user — john)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"john\",\n  \"password\": \"password123\",\n  \"rememberMe\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Token type is Bearer', () => pm.expect(res.data.tokenType).to.eql('Bearer'));",
+                  "pm.test('Contains expiresIn', () => pm.expect(res.data.expiresIn).to.be.a('number'));",
+                  "pm.test('User info matches login', () => {",
+                  "    pm.expect(res.data.user.username).to.eql('john');",
+                  "    pm.expect(res.data.user.email).to.eql('john@example.com');",
+                  "});",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "    if (res.data.user) pm.collectionVariables.set('userUuid', res.data.user.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (by email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"jane@example.com\",\n  \"password\": \"password123\",\n  \"rememberMe\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('User info matches login', () => {",
+                  "    pm.expect(res.data.user.username).to.eql('jane');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (deactivated user — expect fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"sam\",\n  \"password\": \"password123\",\n  \"rememberMe\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Login is rejected', () => pm.response.to.have.status(401) || pm.response.to.have.status(403));",
+                  "pm.test('Response indicates failure', () => pm.expect(res.success).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "auth", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('User info returned', () => {",
+                  "    pm.expect(res.data).to.have.property('uuid');",
+                  "    pm.expect(res.data).to.have.property('email');",
+                  "    pm.expect(res.data).to.have.property('username');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('New tokens issued', () => {",
+                  "    pm.expect(res.data.accessToken).to.be.a('string');",
+                  "    pm.expect(res.data.refreshToken).to.be.a('string');",
+                  "});",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Active Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/sessions", "host": ["{{baseUrl}}"], "path": ["api", "auth", "sessions"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Sessions is an array', () => pm.expect(res.data).to.be.an('array'));",
+                  "pm.test('At least one session exists', () => pm.expect(res.data.length).to.be.greaterThan(0));",
+                  "pm.test('Session has expected fields', () => {",
+                  "    const session = res.data[0];",
+                  "    pm.expect(session).to.have.property('familyId');",
+                  "    pm.expect(session).to.have.property('createdAt');",
+                  "});",
+                  "",
+                  "// Store a non-current session familyId for revocation test",
+                  "if (res.data && res.data.length > 0) {",
+                  "    const nonCurrent = res.data.find(s => !s.currentSession);",
+                  "    if (nonCurrent) pm.collectionVariables.set('sessionFamilyId', nonCurrent.familyId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revoke Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/sessions/{{sessionFamilyId}}", "host": ["{{baseUrl}}"], "path": ["api", "auth", "sessions", "{{sessionFamilyId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/change-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "change-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newPassword456\",\n  \"revokeOtherSessions\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "forgot-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validate Reset Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password/validate?token=PASTE_TOKEN_HERE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password", "validate"],
+              "query": [{ "key": "token", "value": "PASTE_TOKEN_HERE", "description": "Paste the reset token from the email/logs" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);",
+                  "pm.test('Token validity returned', () => pm.expect(pm.response.json().data).to.be.a('boolean'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "auth", "reset-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"PASTE_TOKEN_HERE\",\n  \"newPassword\": \"resetPassword789\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/resend-verification", "host": ["{{baseUrl}}"], "path": ["api", "auth", "resend-verification"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alex@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Validate Email Verification Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-email/validate?token=PASTE_TOKEN_HERE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-email", "validate"],
+              "query": [{ "key": "token", "value": "PASTE_TOKEN_HERE", "description": "Paste the verification token from the email/logs" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Token validity returned', () => pm.expect(pm.response.json().data).to.be.a('boolean'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/verify-email", "host": ["{{baseUrl}}"], "path": ["api", "auth", "verify-email"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"PASTE_TOKEN_HERE\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "OAuth Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/oauth", "host": ["{{baseUrl}}"], "path": ["api", "auth", "oauth"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"GOOGLE\",\n  \"code\": \"PASTE_AUTH_CODE_HERE\",\n  \"redirectUri\": \"http://localhost:3000/oauth/callback\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Contains tokens', () => {",
+                  "    pm.expect(res.data.accessToken).to.be.a('string');",
+                  "    pm.expect(res.data.refreshToken).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Link OAuth Provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/oauth/link", "host": ["{{baseUrl}}"], "path": ["api", "auth", "oauth", "link"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"GITHUB\",\n  \"code\": \"PASTE_AUTH_CODE_HERE\",\n  \"redirectUri\": \"http://localhost:3000/oauth/callback\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unlink OAuth Provider",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/oauth/GITHUB", "host": ["{{baseUrl}}"], "path": ["api", "auth", "oauth", "GITHUB"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["api", "auth", "logout-all"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "description": "Profile management, privacy settings, linked providers, and account deactivation.\n\nRequires a valid `accessToken` — run the **Login** request in the User Auth folder first.",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Profile has expected fields', () => {",
+                  "    pm.expect(res.data).to.have.property('uuid');",
+                  "    pm.expect(res.data).to.have.property('email');",
+                  "    pm.expect(res.data).to.have.property('username');",
+                  "    pm.expect(res.data).to.have.property('displayName');",
+                  "    pm.expect(res.data).to.have.property('emailVerified');",
+                  "    pm.expect(res.data).to.have.property('createdAt');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"John Updated\",\n  \"bio\": \"Hello from Postman!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Display name updated', () => pm.expect(res.data.displayName).to.eql('John Updated'));",
+                  "pm.test('Bio updated', () => pm.expect(res.data.bio).to.eql('Hello from Postman!'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me/avatar", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me", "avatar"] },
+            "body": {
+              "mode": "raw",
+              "raw": "\"https://example.com/avatars/john.png\""
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Avatar URL set', () => pm.expect(res.data.avatarUrl).to.eql('https://example.com/avatars/john.png'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete Avatar",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me/avatar", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me", "avatar"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Avatar URL cleared', () => pm.expect(res.data.avatarUrl).to.be.oneOf([null, undefined]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Privacy Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me/privacy", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me", "privacy"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Privacy settings has expected fields', () => {",
+                  "    pm.expect(res.data).to.have.property('profileVisibility');",
+                  "    pm.expect(res.data).to.have.property('showOnlineStatus');",
+                  "    pm.expect(res.data).to.have.property('allowDirectMessages');",
+                  "    pm.expect(res.data).to.have.property('allowFriendRequests');",
+                  "    pm.expect(res.data).to.have.property('messagePrivacy');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Privacy Settings",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me/privacy", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me", "privacy"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileVisibility\": \"FRIENDS_ONLY\",\n  \"showOnlineStatus\": false,\n  \"allowDirectMessages\": true,\n  \"allowFriendRequests\": true,\n  \"messagePrivacy\": \"FRIENDS_ONLY\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Visibility updated', () => pm.expect(res.data.profileVisibility).to.eql('FRIENDS_ONLY'));",
+                  "pm.test('Online status hidden', () => pm.expect(res.data.showOnlineStatus).to.be.false);",
+                  "pm.test('Message privacy updated', () => pm.expect(res.data.messagePrivacy).to.eql('FRIENDS_ONLY'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Linked Providers",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me/providers", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me", "providers"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Providers is an array', () => pm.expect(res.data).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deactivate Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/profile/me/deactivate", "host": ["{{baseUrl}}"], "path": ["api", "profile", "me", "deactivate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"password123\",\n  \"reason\": \"Testing deactivation from Postman\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Moderator Auth",
+      "description": "Moderator login, sessions, and password management.\n\nRun the **Login** request first to populate the `modAccessToken` variable.",
+      "item": [
+        {
+          "name": "Moderator Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mod_alice\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Token type is Bearer', () => pm.expect(res.data.tokenType).to.eql('Bearer'));",
+                  "pm.test('Moderator info returned', () => {",
+                  "    pm.expect(res.data.moderator).to.have.property('uuid');",
+                  "    pm.expect(res.data.moderator).to.have.property('username');",
+                  "    pm.expect(res.data.moderator).to.have.property('role');",
+                  "});",
+                  "pm.test('Role is MODERATOR', () => pm.expect(res.data.moderator.role).to.eql('MODERATOR'));",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('modAccessToken', res.data.accessToken);",
+                  "    pm.collectionVariables.set('modRefreshToken', res.data.refreshToken);",
+                  "    if (res.data.moderator) pm.collectionVariables.set('modUuid', res.data.moderator.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Moderator Login (deactivated — expect fail)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mod_charlie\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Login is rejected', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});",
+                  "pm.test('Response indicates failure', () => pm.expect(res.success).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Super Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Role is SUPER_ADMIN', () => pm.expect(res.data.moderator.role).to.eql('SUPER_ADMIN'));",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('adminAccessToken', res.data.accessToken);",
+                  "    pm.collectionVariables.set('adminRefreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current Moderator",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Moderator info returned', () => {",
+                  "    pm.expect(res.data).to.have.property('uuid');",
+                  "    pm.expect(res.data).to.have.property('username');",
+                  "    pm.expect(res.data).to.have.property('role');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Moderator Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{modRefreshToken}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('New tokens issued', () => {",
+                  "    pm.expect(res.data.accessToken).to.be.a('string');",
+                  "    pm.expect(res.data.refreshToken).to.be.a('string');",
+                  "});",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('modAccessToken', res.data.accessToken);",
+                  "    pm.collectionVariables.set('modRefreshToken', res.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Moderator Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/sessions", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "sessions"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Sessions is an array', () => pm.expect(res.data).to.be.an('array'));",
+                  "",
+                  "if (res.data && res.data.length > 0) {",
+                  "    const nonCurrent = res.data.find(s => !s.currentSession);",
+                  "    if (nonCurrent) pm.collectionVariables.set('modSessionFamilyId', nonCurrent.familyId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revoke Moderator Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/sessions/{{modSessionFamilyId}}", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "sessions", "{{modSessionFamilyId}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Change Moderator Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/change-password", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "change-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newModPass456\",\n  \"revokeOtherSessions\": false\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Moderator Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "logout"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Moderator Logout All Sessions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/auth/logout-all", "host": ["{{baseUrl}}"], "path": ["api", "mod", "auth", "logout-all"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.response.json().success === true);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Moderator Management",
+      "description": "Admin-only endpoints for managing moderator accounts.\n\nRequires a valid `adminAccessToken` — run the **Super Admin Login** request in the Moderator Auth folder first.",
+      "item": [
+        {
+          "name": "Create Moderator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/admin/moderators", "host": ["{{baseUrl}}"], "path": ["api", "mod", "admin", "moderators"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"mod_dave\",\n  \"password\": \"password123\",\n  \"displayName\": \"Dave Mod\",\n  \"role\": \"MODERATOR\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Moderator created with correct fields', () => {",
+                  "    pm.expect(res.data).to.have.property('uuid');",
+                  "    pm.expect(res.data.username).to.eql('mod_dave');",
+                  "    pm.expect(res.data.displayName).to.eql('Dave Mod');",
+                  "    pm.expect(res.data.role).to.eql('MODERATOR');",
+                  "    pm.expect(res.data.active).to.be.true;",
+                  "});",
+                  "",
+                  "if (res.data) {",
+                  "    pm.collectionVariables.set('createdModUuid', res.data.uuid);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List All Moderators",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/admin/moderators", "host": ["{{baseUrl}}"], "path": ["api", "mod", "admin", "moderators"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Moderators is an array', () => pm.expect(res.data).to.be.an('array'));",
+                  "pm.test('At least one moderator exists', () => pm.expect(res.data.length).to.be.greaterThan(0));",
+                  "pm.test('Each moderator has expected fields', () => {",
+                  "    const mod = res.data[0];",
+                  "    pm.expect(mod).to.have.property('uuid');",
+                  "    pm.expect(mod).to.have.property('username');",
+                  "    pm.expect(mod).to.have.property('role');",
+                  "    pm.expect(mod).to.have.property('active');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Moderator by UUID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/admin/moderators/{{createdModUuid}}", "host": ["{{baseUrl}}"], "path": ["api", "mod", "admin", "moderators", "{{createdModUuid}}"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Correct moderator returned', () => {",
+                  "    pm.expect(res.data.uuid).to.eql(pm.collectionVariables.get('createdModUuid'));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Deactivate Moderator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/admin/moderators/{{createdModUuid}}/deactivate", "host": ["{{baseUrl}}"], "path": ["api", "mod", "admin", "moderators", "{{createdModUuid}}", "deactivate"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Moderator is deactivated', () => pm.expect(res.data.active).to.be.false);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Activate Moderator",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/admin/moderators/{{createdModUuid}}/activate", "host": ["{{baseUrl}}"], "path": ["api", "mod", "admin", "moderators", "{{createdModUuid}}", "activate"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "",
+                  "pm.test('Status is 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Response is successful', () => pm.expect(res.success).to.be.true);",
+                  "pm.test('Moderator is active', () => pm.expect(res.data.active).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Moderators (non-admin — expect 403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{modAccessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/api/mod/admin/moderators", "host": ["{{baseUrl}}"], "path": ["api", "mod", "admin", "moderators"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 403 Forbidden', () => pm.response.to.have.status(403));",
+                  "pm.test('Access denied for non-admin', () => pm.expect(pm.response.json().success).to.be.false);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

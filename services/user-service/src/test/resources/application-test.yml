@@ -1,0 +1,4 @@
+# Minimal config for test profile (unit tests don't need Spring context)
+spring:
+  main:
+    allow-bean-definition-overriding: true

@@ -1,1 +1,4 @@
-.env
+k8s/secrets/.env.pgsql
+k8s/secrets/.env.minio
+k8s/secrets/.env.user-service
+**/secret.yml
