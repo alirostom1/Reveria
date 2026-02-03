@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build & Test') {
+            steps {
+                sh 'mvn clean package -pl services/user-service -am'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t reveria/user-service:latest -f services/user-service/Dockerfile .'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
+                    sh 'docker push reveria/user-service:latest'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'kubectl rollout restart deployment/user-service -n reveria-dev'
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout || true'
+        }
+    }
+}
