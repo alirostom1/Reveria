@@ -49,6 +49,7 @@ class AuthServiceTest {
     @Mock private SessionMapper sessionMapper;
     @Mock private EmailVerificationService emailVerificationService;
     @Mock private LoginAttemptService loginAttemptService;
+    @Mock private UserEventPublisher userEventPublisher;
 
     @InjectMocks private AuthService authService;
 
