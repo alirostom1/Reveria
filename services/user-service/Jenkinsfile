@@ -10,7 +10,7 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh 'mvn clean package -pl services/user-service -am'
+                sh 'chmod +x mvnw && ./mvnw clean package -pl services/user-service -am'
             }
         }
 
