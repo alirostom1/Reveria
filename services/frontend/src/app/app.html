@@ -1,0 +1,9 @@
+@if (!hideHeader()) {
+  <app-header />
+  <main class="min-h-[calc(100vh-72px)]">
+    <router-outlet />
+  </main>
+} @else {
+  <router-outlet />
+}
+<app-toast />
