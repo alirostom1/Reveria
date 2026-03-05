@@ -8,6 +8,7 @@ spring:
   kafka:
     bootstrap-servers: kafka:9092
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     show-sql: false
