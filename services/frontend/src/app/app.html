@@ -1,6 +1,7 @@
-@if (!hideHeader()) {
+@if (!hideChrome()) {
   <app-header />
-  <main class="min-h-[calc(100vh-72px)]">
+  <app-sidebar />
+  <main class="min-h-screen pt-14 pb-16 lg:pl-56 lg:pb-0">
     <router-outlet />
   </main>
 } @else {
