@@ -43,3 +43,9 @@ export interface VerifyEmailRequest {
 export interface RefreshTokenRequest {
   refreshToken: string;
 }
+
+export interface OAuthLoginRequest {
+  provider: string;
+  code: string;
+  redirectUri: string;
+}

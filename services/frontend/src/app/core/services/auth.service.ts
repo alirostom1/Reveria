@@ -7,6 +7,7 @@ import { TokenService } from './token.service';
 import {
   AuthResponse,
   LoginRequest,
+  OAuthLoginRequest,
   RegisterRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
@@ -82,6 +83,20 @@ export class AuthService {
       `${this.apiUrl}/api/auth/verify-email`,
       request
     );
+  }
+
+  getOAuthUrl(provider: string) {
+    const redirectUri = `${window.location.origin}/auth/callback`;
+    return this.http.get<ApiResponse<{ url: string }>>(
+      `${this.apiUrl}/api/auth/oauth/${provider}/url`,
+      { params: { redirectUri } }
+    );
+  }
+
+  oauthLogin(request: OAuthLoginRequest) {
+    return this.http
+      .post<ApiResponse<AuthResponse>>(`${this.apiUrl}/api/auth/oauth`, request)
+      .pipe(tap((res) => this.handleAuthResponse(res)));
   }
 
   refreshToken() {
