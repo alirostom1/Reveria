@@ -21,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -232,6 +233,18 @@ public class AuthController {
         boolean valid = emailVerificationService.validateToken(token);
         return ResponseEntity.ok(ApiResponse.success(valid));
     }
+
+
+    // OAUTH URL ENDPOINTS
+    @GetMapping("/oauth/{provider}/url")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getOAuthUrl(
+            @PathVariable ProviderType provider,
+            @RequestParam String redirectUri
+    ) {
+        String url = oAuthService.getAuthorizationUrl(provider, redirectUri);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("url", url)));
+    }
+
 
     // HELPER
 
