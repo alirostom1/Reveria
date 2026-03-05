@@ -10,105 +10,84 @@ import { ApiError } from '../../../../core/models/api-response.model';
   selector: 'app-reset-password',
   imports: [ReactiveFormsModule, RouterLink, FormField],
   template: `
-    <div class="relative flex min-h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-4 py-12">
-      <!-- Background -->
-      <div class="pointer-events-none absolute inset-0 overflow-hidden">
-        <div class="animate-float absolute -top-40 -right-40 h-96 w-96 rounded-full bg-coral-100/60 blur-3xl"></div>
-        <div class="animate-float-delay-2 absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-sage-100/50 blur-3xl"></div>
-      </div>
+    <div class="flex min-h-screen items-center justify-center bg-stone-50 px-4 py-12">
+      <div class="w-full max-w-sm">
+        <div class="mb-8 text-center">
+          <a routerLink="/" class="mb-6 inline-flex items-center gap-2.5">
+            <div class="flex h-8 w-8 items-center justify-center rounded-md bg-coral-600">
+              <span class="text-sm font-bold text-white">R</span>
+            </div>
+            <span class="text-base font-bold text-stone-900">Reveria</span>
+          </a>
+        </div>
 
-      <div class="animate-fade-up relative z-10 w-full max-w-md">
         @if (validating()) {
-          <!-- Loading State -->
-          <div class="flex flex-col items-center py-20">
-            <div class="animate-spin-slow mb-5 h-10 w-10 rounded-full border-4 border-sand-200 border-t-coral-600"></div>
-            <p class="text-base text-stone-500 font-medium">Validating your reset link...</p>
+          <div class="flex flex-col items-center gap-3 py-16">
+            <div class="h-6 w-6 animate-spin rounded-full border-2 border-stone-200 border-t-stone-600"></div>
+            <p class="text-sm text-stone-500">Validating your reset link...</p>
           </div>
         } @else if (tokenInvalid()) {
-          <!-- Invalid Token -->
-          <div class="rounded-3xl border-2 border-red-200 bg-white p-8 shadow-2xl">
-            <div class="flex flex-col items-center text-center">
-              <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100">
-                <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
-              </div>
-              <h2 class="mb-3 text-xl font-bold text-stone-900">Link expired</h2>
-              <p class="mb-8 text-base leading-relaxed text-stone-600">
-                This password reset link is invalid or has expired. Please request a new one.
+          <div class="overflow-hidden rounded-xl border border-stone-200 bg-white">
+            <div class="h-1 bg-red-500"></div>
+            <div class="p-8 text-center">
+              <p class="font-semibold text-stone-900">Link expired</p>
+              <p class="mt-2 text-sm leading-relaxed text-stone-500">
+                This reset link is invalid or has expired. Please request a new one.
               </p>
               <a
                 routerLink="/auth/forgot-password"
-                class="btn-shine inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-coral-500 to-coral-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-coral-500/25 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+                class="mt-6 inline-block rounded-lg bg-coral-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-coral-700"
               >
                 Request new link
               </a>
             </div>
           </div>
         } @else if (resetDone()) {
-          <!-- Success State -->
-          <div class="rounded-3xl border-2 border-emerald-200 bg-white p-8 shadow-2xl">
-            <div class="flex flex-col items-center text-center">
-              <div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
-                <svg class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h2 class="mb-3 text-xl font-bold text-stone-900">Password reset!</h2>
-              <p class="mb-8 text-base leading-relaxed text-stone-600">
-                Your password has been successfully reset. You can now log in with your new password.
+          <div class="overflow-hidden rounded-xl border border-stone-200 bg-white">
+            <div class="h-1 bg-emerald-500"></div>
+            <div class="p-8 text-center">
+              <p class="font-semibold text-stone-900">Password reset</p>
+              <p class="mt-2 text-sm leading-relaxed text-stone-500">
+                Your password has been successfully updated. You can now log in with your new password.
               </p>
               <a
                 routerLink="/auth/login"
-                class="btn-shine inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-coral-500 to-coral-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-coral-500/25 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5"
+                class="mt-6 inline-block rounded-lg bg-coral-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-coral-700"
               >
                 Go to login
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
               </a>
             </div>
           </div>
         } @else {
-          <!-- Form -->
-          <div class="mb-8 text-center">
-            <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-coral-500 to-coral-600 shadow-2xl shadow-coral-500/30">
-              <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-              </svg>
-            </div>
-            <h1 class="text-3xl font-bold text-stone-900">Set new password</h1>
-            <p class="mt-2 text-base text-stone-500">Choose a strong password for your account</p>
+          <div class="mb-6 text-center">
+            <h1 class="text-2xl font-bold text-stone-900">Set new password</h1>
+            <p class="mt-2 text-sm text-stone-500">Choose a strong password for your account</p>
           </div>
 
-          <form
-            [formGroup]="form"
-            (ngSubmit)="onSubmit()"
-            class="rounded-3xl border-2 border-sand-200 bg-white p-8 shadow-2xl"
-          >
-            <app-form-field label="New Password" fieldId="newPassword" [control]="form.controls.newPassword">
-              <input
-                id="newPassword"
-                formControlName="newPassword"
-                type="password"
-                class="w-full rounded-xl border-2 border-sand-200 bg-sand-50/50 px-4 py-3 text-sm text-stone-900 transition-all duration-200 placeholder:text-stone-400 focus:border-coral-500 focus:bg-white focus:ring-4 focus:ring-coral-500/10 focus:outline-none"
-                placeholder="Minimum 8 characters"
-              />
-            </app-form-field>
+          <div class="rounded-xl border border-stone-200 bg-white p-8">
+            <form [formGroup]="form" (ngSubmit)="onSubmit()">
+              <app-form-field label="New Password" fieldId="newPassword" [control]="form.controls.newPassword">
+                <input
+                  id="newPassword"
+                  formControlName="newPassword"
+                  type="password"
+                  class="w-full rounded-lg border border-stone-200 bg-white px-4 py-3 text-sm text-stone-900 transition-colors placeholder:text-stone-400 focus:border-stone-400 focus:outline-none"
+                  placeholder="Minimum 8 characters"
+                />
+              </app-form-field>
 
-            <button
-              type="submit"
-              [disabled]="submitting()"
-              class="btn-shine flex w-full items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-coral-500 to-coral-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-coral-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-coral-500/35 hover:-translate-y-0.5 disabled:opacity-50 disabled:shadow-none disabled:translate-y-0"
-            >
-              @if (submitting()) {
-                <div class="animate-spin-slow h-5 w-5 rounded-full border-2 border-white/30 border-t-white"></div>
-                Resetting...
-              } @else {
+              <button
+                type="submit"
+                [disabled]="submitting()"
+                class="flex w-full items-center justify-center gap-2 rounded-lg bg-coral-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-coral-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                @if (submitting()) {
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></div>
+                }
                 Reset password
-              }
-            </button>
-          </form>
+              </button>
+            </form>
+          </div>
         }
       </div>
     </div>

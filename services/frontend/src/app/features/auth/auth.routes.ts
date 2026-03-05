@@ -26,4 +26,8 @@ export const authRoutes: Routes = [
     path: 'verify-email',
     loadComponent: () => import('./pages/verify-email/verify-email').then((m) => m.VerifyEmail),
   },
+  {
+    path: 'callback',
+    loadComponent: () => import('./pages/oauth-callback/oauth-callback').then((m) => m.OAuthCallback),
+  },
 ];
