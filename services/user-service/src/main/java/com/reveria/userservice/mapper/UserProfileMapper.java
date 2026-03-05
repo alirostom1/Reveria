@@ -19,6 +19,7 @@ public interface UserProfileMapper {
 
     @Mapping(target = "createdAt", source = "createdAt", qualifiedByName = "formatDateTime")
     @Mapping(target = "linkedProviders", source = "authProviders", qualifiedByName = "mapProviders")
+    @Mapping(target = "hasPassword", expression = "java(user.getPasswordHash() != null)")
     UserProfileResponse toProfileResponse(User user);
 
     @Mapping(target = "showOnlineStatus", source = "showOnlineStatus")

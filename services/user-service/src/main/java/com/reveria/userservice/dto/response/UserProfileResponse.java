@@ -18,6 +18,7 @@ public class UserProfileResponse {
     private String avatarUrl;
     private String bio;
     private boolean emailVerified;
+    private boolean hasPassword;
     private String createdAt;
     private List<String> linkedProviders;
 }
