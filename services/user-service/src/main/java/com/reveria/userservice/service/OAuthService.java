@@ -32,6 +32,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,6 +55,28 @@ public class OAuthService {
     private final UserEventPublisher userEventPublisher;
 
     private final DefaultOAuth2UserService oAuth2UserService = new DefaultOAuth2UserService();
+
+    public String getAuthorizationUrl(ProviderType provider, String redirectUri) {
+        String registrationId = provider.name().toLowerCase();
+        ClientRegistration registration = clientRegistrationRepository.findByRegistrationId(registrationId);
+
+        if (registration == null) {
+            throw new OAuthException("Provider not configured: " + provider, provider);
+        }
+
+        String scopes = String.join(" ", registration.getScopes());
+        StringBuilder url = new StringBuilder(registration.getProviderDetails().getAuthorizationUri())
+                .append("?response_type=code")
+                .append("&client_id=").append(URLEncoder.encode(registration.getClientId(), StandardCharsets.UTF_8))
+                .append("&redirect_uri=").append(URLEncoder.encode(redirectUri, StandardCharsets.UTF_8))
+                .append("&scope=").append(URLEncoder.encode(scopes, StandardCharsets.UTF_8));
+
+        if (provider == ProviderType.GOOGLE) {
+            url.append("&access_type=offline");
+        }
+
+        return url.toString();
+    }
 
     @Transactional
     public AuthResponse authenticate(ProviderType provider, String code, String redirectUri, SessionInfo sessionInfo) {

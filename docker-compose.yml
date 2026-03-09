@@ -42,6 +42,21 @@ services:
     volumes:
       - minio_data:/data
 
+  jenkins:
+    build:
+      context: .
+      dockerfile: infrastructure/k8s/jenkins/Dockerfile
+    user: root
+    ports:
+      - "8085:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+
 volumes:
   postgres_data:
   minio_data:
+  jenkins_data:

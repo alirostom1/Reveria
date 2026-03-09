@@ -70,7 +70,7 @@ spring:
           user-info-uri: https://graph.facebook.com/v18.0/me?fields=id,name,email,picture
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration: 900000
+  access-token-expiration: 300000
   refresh-token-expiration: 86400000
 security:
   max-sessions-per-user: 5
@@ -93,6 +93,7 @@ storage:
 
 server:
   port: 8080
+  address: 0.0.0.0
 
 kafka:
   topic:

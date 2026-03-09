@@ -1,3 +1,8 @@
+#!/bin/bash
+
+#NAMESPACE
+kubectl create namespace reveria-dev --dry-run=client -o yaml | kubectl apply -f -
+
 #SECRETS
 kubectl create secret generic postgresql-secret --from-env-file=k8s/secrets/.env.pgsql -n reveria-dev --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic minio-secret --from-env-file=k8s/secrets/.env.minio -n reveria-dev --dry-run=client -o yaml | kubectl apply -f -
@@ -16,9 +21,6 @@ kubectl apply -f k8s/redis/deployment.yml
 kubectl apply -f k8s/kafka/pv.yml
 kubectl apply -f k8s/kafka/deployment.yml
 
-#JENKINS
-kubectl apply -f k8s/jenkins/pv.yml
-kubectl apply -f k8s/jenkins/deployment.yml
 
 #MINIO
 kubectl apply -f k8s/minio/pv.yml
@@ -26,3 +28,7 @@ kubectl apply -f k8s/minio/deployment.yml
 
 #USER-SERVICE
 kubectl apply -f k8s/services/user-service/deployment.yml
+
+#FRONTEND
+kubectl apply -f k8s/services/frontend/deployment.yml
+
