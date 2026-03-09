@@ -8,15 +8,25 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Install Dependencies') {
             steps {
-                sh 'chmod +x mvnw && ./mvnw clean package -pl services/user-service -am'
+                dir('services/frontend') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('services/frontend') {
+                    sh 'npm run build -- --configuration=production'
+                }
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t reveria/user-service:latest -f services/user-service/Dockerfile .'
+                sh 'docker build -t reveria/frontend:latest -f services/frontend/Dockerfile .'
             }
         }
 
@@ -28,7 +38,7 @@ pipeline {
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
                     sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                    sh 'docker push reveria/user-service:latest'
+                    sh 'docker push reveria/frontend:latest'
                 }
             }
         }
@@ -40,3 +50,4 @@ pipeline {
         }
     }
 }
+
