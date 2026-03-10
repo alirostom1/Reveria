@@ -33,6 +33,7 @@ import { AuthService } from '../../../../core/services/auth.service';
               <img
                 [src]="avatarPreview() || profile()!.avatarUrl!"
                 alt="Avatar"
+                referrerpolicy="no-referrer"
                 class="h-20 w-20 rounded-full border border-stone-200 object-cover"
               />
             } @else {

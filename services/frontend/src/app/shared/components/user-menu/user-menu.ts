@@ -15,6 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <img
             [src]="authService.currentUser()!.avatarUrl!"
             alt="Avatar"
+            referrerpolicy="no-referrer"
             class="h-6 w-6 rounded-md object-cover"
           />
         } @else {

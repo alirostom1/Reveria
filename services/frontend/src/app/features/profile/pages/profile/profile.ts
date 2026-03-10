@@ -25,6 +25,7 @@ import { UserProfileResponse } from '../../../../core/models/profile.model';
               <img
                 [src]="profile()!.avatarUrl!"
                 alt="Avatar"
+                referrerpolicy="no-referrer"
                 class="h-24 w-24 shrink-0 rounded-full border-4 border-white object-cover sm:h-28 sm:w-28"
               />
             } @else {

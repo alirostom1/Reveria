@@ -31,4 +31,5 @@ kubectl apply -f k8s/services/user-service/deployment.yml
 
 #FRONTEND
 kubectl apply -f k8s/services/frontend/deployment.yml
+kubectl apply -f k8s/services/frontend/ingress.yml
 
