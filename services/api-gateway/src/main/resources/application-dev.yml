@@ -1,0 +1,7 @@
+gateway:
+  routes:
+    user-service:
+      url: http://localhost:8080
+    content-service:
+      url: http://localhost:8081
+
