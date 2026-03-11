@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:file:.env[.properties]
+  profiles:
+    active: dev
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+          routes:
+            - id: user-service
+              uri: ${USER_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/api/auth/**,/api/mod/**,/api/profile/**,/api/user/**
+            - id: content-service
+              uri: ${CONTENT_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/content/**
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origin-patterns:
+                  - ${FRONTEND_URL:http://localhost:4200}
+                  - "http://localhost:*"
+                  - "http://127.0.0.1:*"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowed-headers:
+                  - Authorization
+                  - Content-Type
+                  - Accept
+                allow-credentials: true
+                max-age: 3600
+
+server:
+  port: 8090
+  address: 0.0.0.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+jwt:
+  secret: ${JWT_SECRET}
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+
+gateway:
+  public-paths:
+    - /api/auth/register
+    - /api/auth/login
+    - /api/auth/refresh
+    - /api/auth/oauth
+    - /api/auth/oauth/*/url
+    - /api/auth/forgot-password
+    - /api/auth/reset-password
+    - /api/auth/reset-password/validate
+    - /api/auth/verify-email
+    - /api/auth/verify-email/validate
+    - /api/auth/resend-verification
+    - /api/mod/auth/login
+    - /api/mod/auth/refresh
+    - /actuator/**

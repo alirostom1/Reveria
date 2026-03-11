@@ -14,10 +14,12 @@ pipeline {
                     def changes = sh(script: "git diff --name-only HEAD~1", returnStdout: true).trim()
 
                     env.BUILD_USER_SERVICE = changes.contains('user-service/') ? 'true' : 'false'
+                    env.BUILD_API_GATEWAY = changes.contains('api-gateway/') ? 'true' : 'false'
                     env.BUILD_FRONTEND = changes.contains('frontend/') ? 'true' : 'false'
 
                     echo "Changes detected:\n${changes}"
                     echo "Build user-service: ${env.BUILD_USER_SERVICE}"
+                    echo "Build api-gateway: ${env.BUILD_API_GATEWAY}"
                     echo "Build frontend: ${env.BUILD_FRONTEND}"
                 }
             }
@@ -29,6 +31,13 @@ pipeline {
                     when { expression { env.BUILD_USER_SERVICE == 'true' } }
                     steps {
                         build job: 'user-service', wait: true
+                    }
+                }
+
+                stage('API Gateway') {
+                    when { expression { env.BUILD_API_GATEWAY == 'true' } }
+                    steps {
+                        build job: 'api-gateway', wait: true
                     }
                 }
 

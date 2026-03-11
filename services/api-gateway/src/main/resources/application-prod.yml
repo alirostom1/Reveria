@@ -1,0 +1,2 @@
+USER_SERVICE_URL: http://user-service:8080
+CONTENT_SERVICE_URL: http://content-service:8081
