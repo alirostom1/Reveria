@@ -6,3 +6,4 @@ metadata:
 data:
   init.sql: |
     CREATE DATABASE user_db;
+    CREATE DATABASE content_db;

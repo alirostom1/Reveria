@@ -1,7 +1,1 @@
-gateway:
-  routes:
-    user-service:
-      url: http://localhost:8080
-    content-service:
-      url: http://localhost:8081
-
+# Dev defaults — localhost URLs are already set in application.yml

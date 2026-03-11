@@ -1,7 +1,2 @@
-gateway:
-  routes:
-    user-service:
-      url: http://user-service:8080
-    content-service:
-      url: http://content-service:8081
-
+USER_SERVICE_URL: http://user-service:8080
+CONTENT_SERVICE_URL: http://content-service:8081

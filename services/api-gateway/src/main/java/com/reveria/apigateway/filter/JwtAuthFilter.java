@@ -1,6 +1,6 @@
 package com.reveria.apigateway.filter;
 
-import com.reveria.apigateway.config.GatewayProperties;
+import com.reveria.apigateway.config.ApiGatewayConfig;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
@@ -8,6 +8,8 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
@@ -18,8 +20,6 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
@@ -29,9 +29,9 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class JwtValidationFilter implements WebFilter, Ordered {
+public class JwtAuthFilter implements GlobalFilter, Ordered {
 
-    private final GatewayProperties gatewayProperties;
+    private final ApiGatewayConfig gatewayProperties;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @Value("${jwt.secret}")
@@ -46,14 +46,13 @@ public class JwtValidationFilter implements WebFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -1; // Run before the proxy filter
+        return -1;
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
 
-        // Skip JWT validation for public paths
         if (isPublicPath(path)) {
             return chain.filter(exchange);
         }
@@ -61,20 +60,18 @@ public class JwtValidationFilter implements WebFilter, Ordered {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return chain.filter(exchange);
+            return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required");
         }
 
         try {
             String token = authHeader.substring(7);
             Claims claims = extractClaims(token);
 
-            // Verify it's an access token
             String tokenType = claims.get("tokenType", String.class);
             if (!"ACCESS".equals(tokenType)) {
-                return unauthorized(exchange, "Invalid token type");
+                return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token type");
             }
 
-            // Forward user context as headers to downstream services
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
                     .header("X-User-UUID", claims.get("uuid", String.class))
                     .header("X-User-Email", claims.getSubject())
@@ -85,14 +82,14 @@ public class JwtValidationFilter implements WebFilter, Ordered {
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
         } catch (ExpiredJwtException e) {
-            return unauthorized(exchange, "Token has expired");
+            return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "TOKEN_EXPIRED", "Token has expired");
         } catch (SignatureException e) {
-            return unauthorized(exchange, "Invalid token signature");
+            return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token signature");
         } catch (MalformedJwtException e) {
-            return unauthorized(exchange, "Invalid token format");
+            return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token format");
         } catch (Exception e) {
             log.warn("JWT validation failed: {}", e.getMessage());
-            return unauthorized(exchange, "Authentication failed");
+            return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication failed");
         }
     }
 
@@ -116,17 +113,17 @@ public class JwtValidationFilter implements WebFilter, Ordered {
         return roles != null ? roles : List.of();
     }
 
-    private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
+    private Mono<Void> errorResponse(ServerWebExchange exchange, HttpStatus status, String code, String message) {
         ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
+        response.setStatusCode(status);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
+        String path = exchange.getRequest().getURI().getPath();
         String body = """
-                {"success":false,"message":"%s","timestamp":%d}
-                """.formatted(message, System.currentTimeMillis());
+                {"success":false,"message":"%s","data":null,"error":{"code":"%s","path":"%s"}}""".formatted(
+                message, code, path);
 
         DataBuffer buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
         return response.writeWith(Mono.just(buffer));
     }
 }
-

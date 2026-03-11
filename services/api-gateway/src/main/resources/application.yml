@@ -5,12 +5,51 @@ spring:
     import: optional:file:.env[.properties]
   profiles:
     active: dev
-  main:
-    web-application-type: reactive
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+          routes:
+            - id: user-service
+              uri: ${USER_SERVICE_URL:http://localhost:8080}
+              predicates:
+                - Path=/api/auth/**,/api/mod/**,/api/profile/**,/api/user/**
+            - id: content-service
+              uri: ${CONTENT_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/content/**
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origin-patterns:
+                  - ${FRONTEND_URL:http://localhost:4200}
+                  - "http://localhost:*"
+                  - "http://127.0.0.1:*"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - PATCH
+                  - DELETE
+                  - OPTIONS
+                allowed-headers:
+                  - Authorization
+                  - Content-Type
+                  - Accept
+                allow-credentials: true
+                max-age: 3600
 
 server:
   port: 8090
   address: 0.0.0.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
 
 jwt:
   secret: ${JWT_SECRET}
@@ -33,16 +72,4 @@ gateway:
     - /api/auth/resend-verification
     - /api/mod/auth/login
     - /api/mod/auth/refresh
-  routes:
-    user-service:
-      prefixes:
-        - /api/auth
-        - /api/mod
-        - /api/profile
-        - /api/user
-      url: http://localhost:8080
-    content-service:
-      prefixes:
-        - /api/content
-      url: http://localhost:8081
-
+    - /actuator/**
