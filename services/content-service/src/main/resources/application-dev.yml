@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/content_db
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+storage:
+  minio:
+    endpoint: http://localhost:9000
+
+livestream:
+  rtmp-host: 192.168.1.10
+  rtmp-port: 1935
+  hls-base-url: http://192.168.1.10:8088/hls
