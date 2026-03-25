@@ -1,0 +1,221 @@
+<div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-stone-900">Explore</h1>
+    <p class="mt-1 text-sm text-stone-500">Discover videos from the community</p>
+  </div>
+
+  <!-- Search bar -->
+  <div class="mb-5">
+    <form (ngSubmit)="onSearch()" class="relative">
+      <svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+      </svg>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        name="search"
+        placeholder="Search videos..."
+        class="w-full rounded-xl border border-stone-200 bg-stone-50 py-2.5 pl-10 pr-20 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+      />
+      <div class="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+        @if (searchQuery) {
+          <button
+            type="button"
+            (click)="clearSearch()"
+            class="rounded-lg p-1 text-stone-400 hover:text-stone-600"
+          >
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        }
+        <button
+          type="submit"
+          class="rounded-lg bg-coral-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-coral-700"
+        >
+          Search
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Category filter bar -->
+  @if (categories().length > 0) {
+    <div class="no-scrollbar mb-5 flex items-center gap-2 overflow-x-auto pb-1">
+      <button
+        (click)="selectCategory('')"
+        class="shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors"
+        [class]="!selectedCategory()
+          ? 'bg-stone-900 text-white'
+          : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
+      >
+        All
+      </button>
+      @for (cat of categories(); track cat.id) {
+        <button
+          (click)="selectCategory(cat.slug)"
+          class="shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors"
+          [class]="selectedCategory() === cat.slug
+            ? 'bg-stone-900 text-white'
+            : 'bg-stone-100 text-stone-600 hover:bg-stone-200'"
+        >
+          {{ cat.name }}
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Sort bar -->
+  <div class="mb-6 flex items-center justify-between">
+    <div class="flex items-center gap-1.5">
+      @for (opt of [
+        { value: 'latest', label: 'Latest' },
+        { value: 'popular', label: 'Most Viewed' },
+        { value: 'most-liked', label: 'Most Liked' }
+      ]; track opt.value) {
+        <button
+          (click)="selectSort(opt.value)"
+          class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
+          [class]="selectedSort() === opt.value
+            ? 'bg-coral-50 text-coral-700'
+            : 'text-stone-500 hover:bg-stone-50 hover:text-stone-700'"
+        >
+          {{ opt.label }}
+        </button>
+      }
+    </div>
+    @if (totalElements() > 0 && !loading()) {
+      <span class="text-xs text-stone-400">{{ totalElements() }} videos</span>
+    }
+  </div>
+
+  <!-- Live Now -->
+  @if (liveStreams().length > 0 && !selectedCategory() && !searchQuery) {
+    <div class="mb-8">
+      <h2 class="mb-3 flex items-center gap-2 text-base font-bold text-stone-900">
+        <span class="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500">
+          <span class="h-2.5 w-2.5 animate-ping rounded-full bg-red-500"></span>
+        </span>
+        Live Now
+      </h2>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @for (stream of liveStreams(); track stream.uuid) {
+          <a
+            [routerLink]="['/live', stream.uuid]"
+            class="group overflow-hidden rounded-xl border border-red-100 bg-white transition-shadow hover:shadow-md"
+          >
+            <div class="relative aspect-video bg-stone-900">
+              <div class="flex h-full items-center justify-center">
+                <span class="flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase text-white">
+                  <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
+                  LIVE
+                </span>
+              </div>
+              <span class="absolute bottom-2 right-2 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
+                </svg>
+                {{ stream.viewerCount }}
+              </span>
+            </div>
+            <div class="p-3">
+              <h3 class="text-sm font-medium text-stone-900 line-clamp-1 group-hover:text-coral-600">{{ stream.title }}</h3>
+              @if (stream.channelName) {
+                <p class="mt-1 text-xs text-stone-500">{{ stream.channelName }}</p>
+              }
+            </div>
+          </a>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Videos -->
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-stone-600"></div>
+    </div>
+  } @else if (videos().length === 0) {
+    <div class="flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 py-20 text-center">
+      <svg class="mb-4 h-10 w-10 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+      </svg>
+      @if (searchQuery || selectedCategory()) {
+        <p class="text-sm font-medium text-stone-500">No videos found</p>
+        <p class="mt-1 text-xs text-stone-400">Try adjusting your filters or search query</p>
+        <button
+          (click)="clearSearch(); selectCategory('')"
+          class="mt-4 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+        >
+          Clear filters
+        </button>
+      } @else {
+        <p class="text-sm font-medium text-stone-500">No videos yet</p>
+        <p class="mt-1 text-xs text-stone-400">Be the first to share a video.</p>
+      }
+    </div>
+  } @else {
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      @for (video of videos(); track video.uuid) {
+        <a
+          [routerLink]="['/watch', video.uuid]"
+          class="group overflow-hidden rounded-xl border border-stone-100 bg-white transition-shadow hover:shadow-md"
+        >
+          <div class="relative aspect-video bg-stone-100">
+            @if (video.thumbnailUrl) {
+              <img
+                [src]="video.thumbnailUrl"
+                [alt]="video.title"
+                class="h-full w-full object-cover"
+              />
+            } @else {
+              <div class="flex h-full items-center justify-center">
+                <svg class="h-10 w-10 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+              </div>
+            }
+            @if (video.durationSeconds) {
+              <span class="absolute bottom-2 right-2 rounded bg-black/70 px-1.5 py-0.5 text-xs font-medium text-white">
+                {{ formatDuration(video.durationSeconds) }}
+              </span>
+            }
+          </div>
+          <div class="p-3">
+            <h3 class="text-sm font-medium text-stone-900 line-clamp-2 group-hover:text-coral-600">
+              {{ video.title }}
+            </h3>
+            @if (video.channelName) {
+              <p class="mt-1 text-xs text-stone-500">{{ video.channelName }}</p>
+            }
+            <div class="mt-1 flex items-center gap-2 text-xs text-stone-400">
+              @if (video.viewCount != null) {
+                <span>{{ formatViews(video.viewCount) }} views</span>
+                <span>·</span>
+              }
+              <span>{{ timeAgo(video.createdAt) }}</span>
+            </div>
+            @if (video.categoryName) {
+              <span class="mt-1.5 inline-block rounded-full bg-coral-50 px-2 py-0.5 text-[10px] font-medium text-coral-700">
+                {{ video.categoryName }}
+              </span>
+            }
+          </div>
+        </a>
+      }
+    </div>
+
+    @if (hasMore()) {
+      <div class="mt-8 flex justify-center">
+        <button
+          (click)="loadMore()"
+          class="rounded-xl border border-stone-200 px-6 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+        >
+          Load more
+        </button>
+      </div>
+    }
+  }
+</div>

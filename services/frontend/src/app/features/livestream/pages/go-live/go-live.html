@@ -1,0 +1,261 @@
+<div class="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-stone-900">Go Live</h1>
+    <p class="mt-1 text-sm text-stone-500">Start a live stream using OBS or any RTMP-compatible software.</p>
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-16">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-coral-600"></div>
+    </div>
+  } @else if (!stream()) {
+    <!-- Setup form -->
+    <div class="space-y-4">
+      <div class="rounded-xl border border-stone-200 bg-white p-6">
+        <div class="space-y-5">
+          <!-- Channel select -->
+          @if (channels().length > 0) {
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-stone-700">Channel</label>
+              <select
+                [ngModel]="selectedChannelUuid()"
+                (ngModelChange)="onChannelChange($event)"
+                class="w-full rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 focus:border-coral-500 focus:outline-none focus:ring-1 focus:ring-coral-500"
+              >
+                @for (ch of channels(); track ch.uuid) {
+                  <option [value]="ch.uuid">{{ ch.name }}</option>
+                }
+              </select>
+            </div>
+          } @else {
+            <div class="rounded-lg border border-dashed border-stone-200 p-6 text-center">
+              <p class="text-sm text-stone-500">You need a channel to go live.</p>
+              <a routerLink="/channels/new" class="mt-2 inline-block text-sm font-medium text-coral-600 hover:text-coral-700">Create a channel</a>
+            </div>
+          }
+
+          <!-- Title -->
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-stone-700">Stream title</label>
+            <input
+              type="text"
+              [(ngModel)]="streamTitle"
+              placeholder="What are you streaming today?"
+              maxlength="200"
+              class="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-coral-500 focus:outline-none focus:ring-1 focus:ring-coral-500"
+            />
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="mb-1.5 block text-sm font-medium text-stone-700">Description <span class="text-stone-400">(optional)</span></label>
+            <textarea
+              [(ngModel)]="description"
+              rows="3"
+              placeholder="Tell viewers what to expect..."
+              maxlength="2000"
+              class="w-full resize-none rounded-lg border border-stone-200 px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-coral-500 focus:outline-none focus:ring-1 focus:ring-coral-500"
+            ></textarea>
+          </div>
+
+          <!-- Go Live button -->
+          <button
+            (click)="goLive()"
+            [disabled]="!streamTitle.trim() || !selectedChannelUuid() || creating()"
+            class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            @if (creating()) {
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+            }
+            Go Live
+          </button>
+        </div>
+      </div>
+
+      <!-- OBS connection details (from channel) -->
+      @if (selectedChannel()?.streamKey) {
+        <div class="rounded-xl border border-stone-200 bg-white p-6">
+          <h3 class="mb-3 text-sm font-semibold text-stone-700">OBS Connection Details</h3>
+          <div class="space-y-4">
+            <!-- Server URL -->
+            <div>
+              <label class="mb-1 block text-xs font-medium text-stone-500">Server URL</label>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 truncate rounded-lg bg-stone-50 px-3 py-2 text-sm text-stone-800 font-mono border border-stone-100">
+                  {{ selectedChannel()!.rtmpIngestUrl }}
+                </code>
+                <button
+                  (click)="copyToClipboard(selectedChannel()!.rtmpIngestUrl!, 'url')"
+                  class="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                >
+                  {{ urlCopied() ? 'Copied!' : 'Copy' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Stream Key -->
+            <div>
+              <label class="mb-1 block text-xs font-medium text-stone-500">Stream Key</label>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 truncate rounded-lg bg-stone-50 px-3 py-2 text-sm font-mono border border-stone-100"
+                  [class]="keyVisible() ? 'text-stone-800' : 'text-transparent select-none'"
+                  [style.text-shadow]="keyVisible() ? 'none' : '0 0 8px rgba(0,0,0,0.3)'"
+                >
+                  {{ selectedChannel()!.streamKey }}
+                </code>
+                <button
+                  (click)="keyVisible.set(!keyVisible())"
+                  class="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                >
+                  {{ keyVisible() ? 'Hide' : 'Show' }}
+                </button>
+                <button
+                  (click)="copyToClipboard(selectedChannel()!.streamKey!, 'key')"
+                  class="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                >
+                  {{ keyCopied() ? 'Copied!' : 'Copy' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Regenerate key -->
+            <button
+              (click)="regenerateKey()"
+              class="text-xs font-medium text-coral-600 hover:text-coral-700 transition-colors"
+            >
+              Regenerate stream key
+            </button>
+
+            <!-- Instructions -->
+            <div class="rounded-lg border border-stone-100 bg-stone-50 p-3">
+              <h4 class="text-xs font-semibold text-stone-700">Quick setup</h4>
+              <ol class="mt-2 space-y-1 text-xs text-stone-600">
+                <li>1. Open OBS Studio (or Streamlabs)</li>
+                <li>2. Go to Settings &rarr; Stream</li>
+                <li>3. Set Service to <strong>Custom</strong></li>
+                <li>4. Paste the Server URL and Stream Key above</li>
+                <li>5. Fill in a stream title and click "Go Live"</li>
+                <li>6. Click "Start Streaming" in OBS</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <!-- Stream dashboard -->
+    <div class="space-y-4">
+      <!-- Status bar -->
+      <div class="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-5 py-3">
+        <div class="flex items-center gap-3">
+          @if (stream()!.status === 'LIVE') {
+            <span class="flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-1 text-xs font-bold uppercase text-white">
+              <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
+              Live
+            </span>
+          } @else if (stream()!.status === 'IDLE') {
+            <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">Waiting for OBS connection</span>
+          } @else {
+            <span class="rounded-full bg-stone-100 px-3 py-1 text-xs font-semibold text-stone-600">Ended</span>
+          }
+          <h2 class="text-sm font-semibold text-stone-900">{{ stream()!.title }}</h2>
+        </div>
+        @if (stream()!.status !== 'ENDED') {
+          <button
+            (click)="endStream()"
+            [disabled]="ending()"
+            class="rounded-lg border border-red-200 bg-red-50 px-4 py-1.5 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+          >
+            End Stream
+          </button>
+        }
+      </div>
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <!-- Preview -->
+        <div class="rounded-xl border border-stone-200 bg-white p-4">
+          <h3 class="mb-3 text-sm font-semibold text-stone-700">Preview</h3>
+          @if (stream()!.status === 'LIVE' && stream()!.hlsPlaybackUrl) {
+            <div class="aspect-video overflow-hidden rounded-lg bg-black">
+              <app-video-player [src]="stream()!.hlsPlaybackUrl!" [live]="true" />
+            </div>
+          } @else if (stream()!.status === 'IDLE') {
+            <div class="flex aspect-video flex-col items-center justify-center rounded-lg border border-dashed border-stone-200 bg-stone-50">
+              <div class="mb-3 h-8 w-8 animate-pulse rounded-full bg-stone-200"></div>
+              <p class="text-sm font-medium text-stone-500">Waiting for stream...</p>
+              <p class="mt-1 text-xs text-stone-400">Start streaming from OBS to see the preview</p>
+            </div>
+          } @else {
+            <div class="flex aspect-video items-center justify-center rounded-lg bg-stone-100">
+              <p class="text-sm text-stone-500">Stream has ended</p>
+            </div>
+          }
+        </div>
+
+        <!-- Connection details (from channel) -->
+        @if (selectedChannel()?.streamKey && stream()!.status !== 'ENDED') {
+          <div class="rounded-xl border border-stone-200 bg-white p-4">
+            <h3 class="mb-3 text-sm font-semibold text-stone-700">OBS Connection Details</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="mb-1 block text-xs font-medium text-stone-500">Server URL</label>
+                <div class="flex items-center gap-2">
+                  <code class="flex-1 truncate rounded-lg bg-stone-50 px-3 py-2 text-sm text-stone-800 font-mono border border-stone-100">
+                    {{ selectedChannel()!.rtmpIngestUrl }}
+                  </code>
+                  <button
+                    (click)="copyToClipboard(selectedChannel()!.rtmpIngestUrl!, 'url')"
+                    class="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                  >
+                    {{ urlCopied() ? 'Copied!' : 'Copy' }}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="mb-1 block text-xs font-medium text-stone-500">Stream Key</label>
+                <div class="flex items-center gap-2">
+                  <code class="flex-1 truncate rounded-lg bg-stone-50 px-3 py-2 text-sm font-mono border border-stone-100"
+                    [class]="keyVisible() ? 'text-stone-800' : 'text-transparent select-none'"
+                    [style.text-shadow]="keyVisible() ? 'none' : '0 0 8px rgba(0,0,0,0.3)'"
+                  >
+                    {{ selectedChannel()!.streamKey }}
+                  </code>
+                  <button
+                    (click)="keyVisible.set(!keyVisible())"
+                    class="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                  >
+                    {{ keyVisible() ? 'Hide' : 'Show' }}
+                  </button>
+                  <button
+                    (click)="copyToClipboard(selectedChannel()!.streamKey!, 'key')"
+                    class="shrink-0 rounded-lg border border-stone-200 px-3 py-2 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-50"
+                  >
+                    {{ keyCopied() ? 'Copied!' : 'Copy' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Share link -->
+      @if (stream()!.status === 'LIVE') {
+        <div class="rounded-xl border border-stone-200 bg-white p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-stone-700">Share your stream</p>
+              <p class="text-xs text-stone-500">Viewers can watch at this link:</p>
+            </div>
+            <a
+              [routerLink]="['/live', stream()!.uuid]"
+              class="rounded-lg bg-coral-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-coral-700"
+            >
+              View as viewer
+            </a>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

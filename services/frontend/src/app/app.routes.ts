@@ -8,7 +8,19 @@ export const routes: Routes = [
   },
   {
     path: 'explore',
-    loadComponent: () => import('./features/explore/pages/explore/explore').then((m) => m.Explore),
+    loadChildren: () => import('./features/explore/explore.routes').then((m) => m.exploreRoutes),
+  },
+  {
+    path: 'watch/:uuid',
+    loadComponent: () => import('./features/watch/pages/watch/watch').then((m) => m.Watch),
+  },
+  {
+    path: 'channels',
+    loadChildren: () => import('./features/channels/channels.routes').then((m) => m.channelRoutes),
+  },
+  {
+    path: 'live',
+    loadChildren: () => import('./features/livestream/livestream.routes').then((m) => m.livestreamRoutes),
   },
   {
     path: 'auth',
