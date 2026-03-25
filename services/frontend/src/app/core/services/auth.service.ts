@@ -29,19 +29,20 @@ export class AuthService {
   async initAuth(): Promise<void> {
     if (!this.tokenService.hasTokens()) return;
     try {
+      // The auth interceptor handles 401 by refreshing the token and retrying
       const res = await firstValueFrom(
-        this.http.get<ApiResponse<UserInfo>>(`${this.apiUrl}/api/auth/me`).pipe(
-          catchError(() => {
-            this.tokenService.clearTokens();
-            return of(null);
-          })
-        )
+        this.http.get<ApiResponse<UserInfo>>(`${this.apiUrl}/api/auth/me`)
       );
       if (res?.data) {
         this.currentUser.set(res.data);
       }
-    } catch {
-      this.tokenService.clearTokens();
+    } catch (err: any) {
+      // Only clear tokens on auth failures (401/403) — the interceptor already
+      // attempted a token refresh before this point, so if we still got a 401
+      // the refresh token is also invalid.
+      if (err?.status === 401 || err?.status === 403) {
+        this.tokenService.clearTokens();
+      }
     }
   }
 

@@ -52,7 +52,8 @@ function handleRefresh(
       }),
       catchError((err) => {
         isRefreshing = false;
-        authService.logout();
+        tokenService.clearTokens();
+        authService.currentUser.set(null);
         return throwError(() => err);
       })
     );
