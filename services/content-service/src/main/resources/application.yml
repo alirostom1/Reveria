@@ -1,0 +1,34 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: content-service
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+  datasource:
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+storage:
+  minio:
+    access-key: ${MINIO_ACCESS_KEY:minioadmin}
+    secret-key: ${MINIO_SECRET_KEY:minioadmin}
+    bucket: ${MINIO_BUCKET:reveria-videos}
+
+server:
+  port: 8081
+  address: 0.0.0.0
+
+ffmpeg:
+  path: ${FFMPEG_PATH:ffmpeg}
+  ffprobe-path: ${FFPROBE_PATH:ffprobe}
+  temp-dir: ${FFMPEG_TEMP_DIR:/tmp/reveria-transcoding}
+
+livestream:
+  rtmp-host: ${RTMP_HOST:localhost}
+  rtmp-port: ${RTMP_PORT:1935}
+  hls-base-url: ${HLS_BASE_URL:http://localhost:8088/hls}

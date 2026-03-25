@@ -1,0 +1,443 @@
+<div class="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+
+  <!-- ===== Step indicator ===== -->
+  <div class="mb-8 flex items-center justify-center gap-2">
+    @for (s of ['Details', 'Upload', 'Processing', 'Done']; track s; let i = $index) {
+      <div class="flex items-center gap-2">
+        <div
+          class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-300"
+          [class]="stepIndex() > i
+            ? 'bg-emerald-500 text-white'
+            : stepIndex() === i
+              ? 'bg-coral-600 text-white ring-4 ring-coral-100'
+              : 'bg-stone-100 text-stone-400'"
+        >
+          @if (stepIndex() > i) {
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+              <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+            </svg>
+          } @else {
+            {{ i + 1 }}
+          }
+        </div>
+        <span
+          class="hidden text-xs font-medium sm:block"
+          [class]="stepIndex() >= i ? 'text-stone-900' : 'text-stone-400'"
+        >{{ s }}</span>
+        @if (i < 3) {
+          <div class="mx-1 h-px w-6 sm:w-10"
+            [class]="stepIndex() > i ? 'bg-emerald-400' : 'bg-stone-200'"
+          ></div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ===== STEP 1: Form ===== -->
+  @if (step() === 'form') {
+    <div class="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <h1 class="text-xl font-bold text-stone-900">Upload Video</h1>
+      <p class="mt-1 text-sm text-stone-500">Share your content with the community</p>
+
+      <form (ngSubmit)="onSubmit()" class="mt-6 space-y-5">
+        <!-- Channel -->
+        <div>
+          <label for="channel" class="mb-1.5 block text-sm font-medium text-stone-700">Channel</label>
+          @if (loadingChannels()) {
+            <div class="flex items-center gap-2 py-2">
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-stone-500"></div>
+              <span class="text-sm text-stone-400">Loading channels...</span>
+            </div>
+          } @else if (channels().length === 0 && !showCreateChannel()) {
+            <div class="rounded-xl border border-dashed border-stone-200 p-4 text-center">
+              <p class="text-sm text-stone-500">You need a channel to upload videos</p>
+              <button
+                type="button"
+                (click)="showCreateChannel.set(true)"
+                class="mt-2 text-sm font-semibold text-coral-600 hover:text-coral-700 transition-colors"
+              >
+                + Create your first channel
+              </button>
+            </div>
+          } @else {
+            <div class="flex items-center gap-2">
+              <select
+                id="channel"
+                [(ngModel)]="selectedChannelUuid"
+                name="channel"
+                required
+                class="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+              >
+                <option value="" disabled>Select a channel</option>
+                @for (ch of channels(); track ch.uuid) {
+                  <option [value]="ch.uuid">{{ ch.name }}</option>
+                }
+              </select>
+              @if (channels().length < 3) {
+                <button
+                  type="button"
+                  (click)="showCreateChannel.set(!showCreateChannel())"
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 text-stone-500 transition-colors hover:bg-stone-50 hover:text-stone-700"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                </button>
+              }
+            </div>
+          }
+          @if (showCreateChannel()) {
+            <div class="mt-2 flex items-center gap-2">
+              <input
+                type="text"
+                [(ngModel)]="newChannelName"
+                name="newChannelName"
+                maxlength="100"
+                placeholder="Channel name"
+                class="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+              />
+              <button
+                type="button"
+                (click)="createChannel()"
+                [disabled]="!newChannelName.trim()"
+                class="rounded-xl bg-coral-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-coral-700 disabled:opacity-50"
+              >
+                Create
+              </button>
+              <button
+                type="button"
+                (click)="showCreateChannel.set(false); newChannelName = ''"
+                class="text-sm text-stone-500 hover:text-stone-700"
+              >
+                Cancel
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Title -->
+        <div>
+          <label for="title" class="mb-1.5 block text-sm font-medium text-stone-700">Title</label>
+          <input
+            id="title"
+            type="text"
+            [(ngModel)]="videoTitle"
+            name="title"
+            required
+            maxlength="200"
+            class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+            placeholder="Give your video a title"
+          />
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="description" class="mb-1.5 block text-sm font-medium text-stone-700">Description</label>
+          <textarea
+            id="description"
+            [(ngModel)]="description"
+            name="description"
+            maxlength="2000"
+            rows="3"
+            class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+            placeholder="Describe your video (optional)"
+          ></textarea>
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label for="category" class="mb-1.5 block text-sm font-medium text-stone-700">Category</label>
+          <select
+            id="category"
+            [(ngModel)]="selectedCategorySlug"
+            name="category"
+            class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+          >
+            <option value="">No category</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.slug">{{ cat.name }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-stone-700">Tags</label>
+          @if (tags().length > 0) {
+            <div class="mb-2 flex flex-wrap gap-1.5">
+              @for (tag of tags(); track tag) {
+                <span class="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-700">
+                  #{{ tag }}
+                  <button
+                    type="button"
+                    (click)="removeTag(tag)"
+                    class="ml-0.5 text-stone-400 hover:text-stone-600"
+                  >
+                    <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              }
+            </div>
+          }
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              [(ngModel)]="tagInput"
+              name="tagInput"
+              maxlength="50"
+              (keydown)="onTagKeydown($event)"
+              class="flex-1 rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-900 outline-none transition-colors focus:border-coral-400 focus:bg-white focus:ring-1 focus:ring-coral-400/30"
+              placeholder="Add a tag and press Enter"
+              [disabled]="tags().length >= 10"
+            />
+            <button
+              type="button"
+              (click)="addTag()"
+              [disabled]="!tagInput.trim() || tags().length >= 10"
+              class="rounded-xl bg-stone-100 px-3 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-200 disabled:opacity-40"
+            >
+              Add
+            </button>
+          </div>
+          <p class="mt-1 text-xs text-stone-400">{{ tags().length }}/10 tags</p>
+        </div>
+
+        <!-- File drop zone -->
+        <div>
+          <label class="mb-1.5 block text-sm font-medium text-stone-700">Video File</label>
+          <div
+            class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 transition-all duration-200"
+            [class]="selectedFile()
+              ? 'border-coral-300 bg-coral-50/50'
+              : 'border-stone-200 bg-stone-50/50 hover:border-stone-300 hover:bg-stone-50'"
+            (dragover)="$event.preventDefault()"
+            (drop)="onDrop($event)"
+          >
+            @if (selectedFile()) {
+              <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-coral-100">
+                <svg class="h-7 w-7 text-coral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+              </div>
+              <p class="mt-3 text-sm font-semibold text-stone-900">{{ selectedFile()!.name }}</p>
+              <p class="mt-0.5 text-xs text-stone-500">{{ formatFileSize(selectedFile()!.size) }}</p>
+              <button
+                type="button"
+                (click)="clearFile()"
+                class="mt-3 rounded-full border border-stone-200 px-3 py-1 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-100"
+              >
+                Change file
+              </button>
+            } @else {
+              <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-100">
+                <svg class="h-7 w-7 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                </svg>
+              </div>
+              <p class="mt-3 text-sm text-stone-600">
+                Drag & drop or
+                <label class="cursor-pointer font-semibold text-coral-600 hover:text-coral-700">
+                  browse
+                  <input
+                    type="file"
+                    accept="video/mp4,video/quicktime,video/x-msvideo,video/x-matroska,video/webm"
+                    (change)="onFileSelected($event)"
+                    class="hidden"
+                  />
+                </label>
+              </p>
+              <p class="mt-1 text-xs text-stone-400">MP4, MOV, AVI, MKV, WebM up to 500 MB</p>
+            }
+          </div>
+        </div>
+
+        @if (error()) {
+          <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {{ error() }}
+          </div>
+        }
+
+        <button
+          type="submit"
+          [disabled]="!selectedChannelUuid || !videoTitle.trim() || !selectedFile()"
+          class="w-full rounded-xl bg-coral-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-coral-700 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Upload Video
+        </button>
+      </form>
+    </div>
+  }
+
+  <!-- ===== STEP 2: Uploading ===== -->
+  @if (step() === 'uploading') {
+    <div class="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
+      <div class="flex flex-col items-center text-center">
+        <!-- Animated upload icon -->
+        <div class="relative mb-6">
+          <div class="flex h-20 w-20 items-center justify-center rounded-full bg-coral-50">
+            <svg class="h-9 w-9 text-coral-600 animate-bounce" style="animation-duration: 2s;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
+          </div>
+        </div>
+
+        <h2 class="text-lg font-bold text-stone-900">Uploading your video</h2>
+        <p class="mt-1 text-sm text-stone-500">{{ selectedFile()?.name }}</p>
+
+        <!-- Progress bar -->
+        <div class="mt-6 w-full max-w-sm">
+          <div class="flex items-center justify-between text-sm">
+            <span class="font-medium text-stone-700">{{ uploadPercent() }}%</span>
+            <span class="text-stone-400">{{ formatFileSize(selectedFile()?.size ?? 0) }}</span>
+          </div>
+          <div class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
+            <div
+              class="h-full rounded-full bg-gradient-to-r from-coral-500 to-coral-600 transition-all duration-300 ease-out"
+              [style.width.%]="uploadPercent()"
+            ></div>
+          </div>
+        </div>
+
+        <p class="mt-4 text-xs text-stone-400">Please don't close this page</p>
+      </div>
+    </div>
+  }
+
+  <!-- ===== STEP 3: Processing ===== -->
+  @if (step() === 'processing') {
+    <div class="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
+      <div class="flex flex-col items-center text-center">
+        <!-- Animated processing icon -->
+        <div class="relative mb-6">
+          <div class="flex h-20 w-20 items-center justify-center rounded-full bg-stone-50">
+            <div class="h-10 w-10 animate-spin rounded-full border-[3px] border-stone-200 border-t-coral-600"></div>
+          </div>
+          <!-- Orbiting dot -->
+          <div class="absolute inset-0 animate-spin" style="animation-duration: 3s;">
+            <div class="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-coral-500"></div>
+          </div>
+        </div>
+
+        <h2 class="text-lg font-bold text-stone-900">Processing your video</h2>
+        <p class="mt-1 text-sm text-stone-500">{{ processMessage() }}</p>
+
+        <!-- Progress bar -->
+        <div class="mt-6 w-full max-w-sm">
+          <div class="flex items-center justify-between text-sm">
+            <span class="font-medium text-stone-700">{{ processProgress() }}%</span>
+            <span class="text-xs text-stone-400">
+              @switch (processStep()) {
+                @case ('PROBING') { Analyzing }
+                @case ('THUMBNAIL') { Thumbnail }
+                @case ('TRANSCODING') { Encoding }
+                @case ('UPLOADING') { Storing }
+                @case ('MP4') { Downloads }
+                @default { Processing }
+              }
+            </span>
+          </div>
+          <div class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-stone-100">
+            <div
+              class="h-full rounded-full bg-gradient-to-r from-coral-500 via-coral-600 to-emerald-500 transition-all duration-500 ease-out"
+              [style.width.%]="processProgress()"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Processing steps -->
+        <div class="mt-6 w-full max-w-xs space-y-2">
+          @for (item of processingSteps(); track item.key) {
+            <div class="flex items-center gap-2.5 text-left">
+              @if (item.done) {
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                  <svg class="h-3 w-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                </div>
+              } @else if (item.active) {
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center">
+                  <div class="h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-coral-600"></div>
+                </div>
+              } @else {
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-stone-100">
+                  <div class="h-1.5 w-1.5 rounded-full bg-stone-300"></div>
+                </div>
+              }
+              <span
+                class="text-xs font-medium"
+                [class]="item.done ? 'text-emerald-700' : item.active ? 'text-stone-900' : 'text-stone-400'"
+              >{{ item.label }}</span>
+            </div>
+          }
+        </div>
+
+        <p class="mt-6 text-xs text-stone-400">You can leave this page — we'll keep processing</p>
+      </div>
+    </div>
+  }
+
+  <!-- ===== STEP 4: Done ===== -->
+  @if (step() === 'done') {
+    <div class="rounded-2xl border border-stone-200 bg-white p-8 shadow-sm">
+      <div class="flex flex-col items-center text-center">
+        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50">
+          <svg class="h-10 w-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </div>
+
+        <h2 class="mt-4 text-lg font-bold text-stone-900">Your video is ready!</h2>
+        <p class="mt-1 text-sm text-stone-500">It's live and ready to be watched</p>
+
+        <div class="mt-6 flex items-center gap-3">
+          <button
+            (click)="goToVideo()"
+            class="rounded-xl bg-coral-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-coral-700"
+          >
+            Watch now
+          </button>
+          <a
+            routerLink="/explore"
+            class="rounded-xl border border-stone-200 px-6 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+          >
+            Back to explore
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===== Error ===== -->
+  @if (step() === 'error') {
+    <div class="rounded-2xl border border-red-100 bg-white p-8 shadow-sm">
+      <div class="flex flex-col items-center text-center">
+        <div class="flex h-20 w-20 items-center justify-center rounded-full bg-red-50">
+          <svg class="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+          </svg>
+        </div>
+
+        <h2 class="mt-4 text-lg font-bold text-stone-900">Something went wrong</h2>
+        <p class="mt-1 text-sm text-stone-500">{{ error() || 'An unexpected error occurred' }}</p>
+
+        <div class="mt-6 flex items-center gap-3">
+          <button
+            (click)="retry()"
+            class="rounded-xl bg-stone-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-stone-800"
+          >
+            Try again
+          </button>
+          <a
+            routerLink="/explore"
+            class="rounded-xl border border-stone-200 px-6 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+          >
+            Back to explore
+          </a>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

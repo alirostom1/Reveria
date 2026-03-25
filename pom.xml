@@ -18,6 +18,7 @@
 	<modules>
 		<module>services/user-service</module>
 		<module>services/api-gateway</module>
+		<module>services/content-service</module>
 	</modules>
 
 	<properties>

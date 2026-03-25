@@ -8,6 +8,9 @@ COPY .mvn .mvn
 COPY pom.xml .
 COPY services/api-gateway/pom.xml services/api-gateway/pom.xml
 
+RUN mkdir -p services/user-service services/content-service
+
+
 RUN chmod +x mvnw && \
     ./mvnw dependency:go-offline -pl services/api-gateway -am
 

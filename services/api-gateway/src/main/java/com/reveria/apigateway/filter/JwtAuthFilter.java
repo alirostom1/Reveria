@@ -52,23 +52,28 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
-
-        if (isPublicPath(path)) {
-            return chain.filter(exchange);
-        }
+        boolean publicPath = isPublicPath(path);
 
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
+        // No token present
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (publicPath) {
+                return chain.filter(exchange);
+            }
             return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication required");
         }
 
+        // Token present — always try to extract user headers (even on public paths)
         try {
             String token = authHeader.substring(7);
             Claims claims = extractClaims(token);
 
             String tokenType = claims.get("tokenType", String.class);
             if (!"ACCESS".equals(tokenType)) {
+                if (publicPath) {
+                    return chain.filter(exchange);
+                }
                 return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token type");
             }
 
@@ -82,13 +87,17 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
         } catch (ExpiredJwtException e) {
+            if (publicPath) return chain.filter(exchange);
             return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "TOKEN_EXPIRED", "Token has expired");
         } catch (SignatureException e) {
+            if (publicPath) return chain.filter(exchange);
             return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token signature");
         } catch (MalformedJwtException e) {
+            if (publicPath) return chain.filter(exchange);
             return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN", "Invalid token format");
         } catch (Exception e) {
             log.warn("JWT validation failed: {}", e.getMessage());
+            if (publicPath) return chain.filter(exchange);
             return errorResponse(exchange, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication failed");
         }
     }

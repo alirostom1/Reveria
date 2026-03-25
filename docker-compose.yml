@@ -42,6 +42,15 @@ services:
     volumes:
       - minio_data:/data
 
+  nginx-rtmp:
+    build:
+      context: ./services/nginx-rtmp
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "1935:1935"
+      - "8088:8088"
+
   jenkins:
     build:
       context: .

@@ -38,6 +38,16 @@
   --color-sand-900: #5a5149;
 }
 
+/* ── Hide scrollbar ──────────────────────────────────────────── */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ── Toast animations ─────────────────────────────────────────── */
 
 @keyframes toast-in {

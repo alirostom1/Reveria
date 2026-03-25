@@ -1,0 +1,513 @@
+@if (loading()) {
+  <div class="flex items-center justify-center py-32">
+    <div class="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-coral-600"></div>
+  </div>
+} @else if (video()) {
+  <div class="mx-auto max-w-[1600px] px-3 pb-8 pt-3 sm:px-4 lg:px-5">
+    <div class="flex flex-col gap-4 lg:flex-row lg:gap-5">
+
+      <!-- ==================== MAIN COLUMN ==================== -->
+      <div class="min-w-0 flex-1">
+
+        <!-- Player -->
+        @if (video()!.status === 'READY' && video()!.hlsManifestUrl) {
+          <div class="aspect-video overflow-hidden rounded-xl bg-black shadow-lg">
+            <app-video-player [src]="video()!.hlsManifestUrl!" [isPro]="subscriptionService.isPro()" (playing)="onVideoPlaying()" />
+          </div>
+        } @else if (video()!.status === 'PROCESSING' || video()!.status === 'PENDING') {
+          <div class="flex aspect-video flex-col items-center justify-center rounded-xl border border-stone-200 bg-white">
+            <div class="mb-4 h-10 w-10 animate-spin rounded-full border-[3px] border-stone-200 border-t-coral-600"></div>
+            <p class="text-sm font-semibold text-stone-700">Processing your video</p>
+            <p class="mt-1.5 text-xs text-stone-500">This may take a few minutes. You can refresh to check.</p>
+          </div>
+        } @else if (video()!.status === 'FAILED') {
+          <div class="flex aspect-video flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50">
+            <svg class="mb-3 h-10 w-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <p class="text-sm font-semibold text-red-700">Processing failed</p>
+            <p class="mt-1 text-xs text-red-500">There was an error processing this video.</p>
+          </div>
+        }
+
+        <!-- ===== Video info card ===== -->
+        <div class="mt-3 rounded-xl border border-stone-200 bg-white p-4">
+          <!-- Title -->
+          <h1 class="text-lg font-bold leading-snug text-stone-900 sm:text-xl">{{ video()!.title }}</h1>
+
+          <!-- Channel + actions row -->
+          <div class="mt-3 flex flex-col gap-3 border-t border-stone-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+            <!-- Channel info -->
+            @if (channel()) {
+              <div class="flex items-center gap-3">
+                <a [routerLink]="['/channels', channel()!.uuid]" class="shrink-0">
+                  @if (channel()!.avatarUrl) {
+                    <img [src]="channel()!.avatarUrl" [alt]="channel()!.name"
+                      class="h-10 w-10 rounded-full object-cover ring-2 ring-stone-100" />
+                  } @else {
+                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-coral-600 text-sm font-bold text-white">
+                      {{ channel()!.name.charAt(0).toUpperCase() }}
+                    </div>
+                  }
+                </a>
+                <div class="min-w-0">
+                  <a [routerLink]="['/channels', channel()!.uuid]"
+                    class="block truncate text-sm font-semibold text-stone-900 hover:text-coral-600 transition-colors">
+                    {{ channel()!.name }}
+                  </a>
+                  <p class="text-xs text-stone-500">{{ formatCount(channel()!.subscriberCount) }} subscribers</p>
+                </div>
+                @if (!isOwner() && authService.isAuthenticated()) {
+                  <button
+                    (click)="toggleSubscribe()"
+                    [disabled]="subscribing()"
+                    class="ml-1 rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 disabled:opacity-50"
+                    [class]="subscribed()
+                      ? 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                      : 'bg-stone-900 text-white hover:bg-stone-800'"
+                  >
+                    {{ subscribed() ? 'Subscribed' : 'Subscribe' }}
+                  </button>
+                }
+              </div>
+            }
+
+            <!-- Action buttons -->
+            <div class="flex items-center gap-2">
+              <!-- Like -->
+              @if (authService.isAuthenticated()) {
+                <button
+                  (click)="toggleLike()"
+                  [disabled]="liking()"
+                  class="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 disabled:opacity-50"
+                  [class]="liked()
+                    ? 'border-coral-200 bg-coral-50 text-coral-600 hover:bg-coral-100'
+                    : 'border-stone-200 bg-stone-50 text-stone-700 hover:bg-stone-100'"
+                >
+                  <svg class="h-[18px] w-[18px]" [attr.fill]="liked() ? 'currentColor' : 'none'" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
+                  </svg>
+                  {{ formatCount(video()!.likeCount ?? 0) }}
+                </button>
+              } @else {
+                <div class="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-medium text-stone-600">
+                  <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 0 1-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904m10.598-9.75H14.25M5.904 18.5c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 0 1-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 9.953 4.167 9.5 5 9.5h1.053c.472 0 .745.556.5.96a8.958 8.958 0 0 0-1.302 4.665c0 1.194.232 2.333.654 3.375Z" />
+                  </svg>
+                  {{ formatCount(video()!.likeCount ?? 0) }}
+                </div>
+              }
+
+              <!-- Share / Copy link -->
+              <button
+                (click)="copyLink()"
+                class="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-semibold text-stone-700 transition-all duration-200 hover:bg-stone-100"
+              >
+                @if (linkCopied()) {
+                  <svg class="h-[18px] w-[18px] text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                  <span class="text-emerald-600">Copied!</span>
+                } @else {
+                  <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                  </svg>
+                  Share
+                }
+              </button>
+
+              <!-- Download -->
+              @if (video()!.allowDownloads !== false) {
+                <div class="relative">
+                  <button
+                    (click)="downloadMenuOpen.set(!downloadMenuOpen())"
+                    [disabled]="downloading()"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm font-semibold text-stone-700 transition-all duration-200 hover:bg-stone-100 disabled:opacity-50"
+                  >
+                    @if (downloading()) {
+                      <div class="h-4 w-4 animate-spin rounded-full border-2 border-stone-300 border-t-stone-600"></div>
+                    } @else {
+                      <svg class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                    }
+                    Download
+                  </button>
+                  @if (downloadMenuOpen()) {
+                    <div class="absolute right-0 top-full z-10 mt-1.5 min-w-[180px] overflow-hidden rounded-xl border border-stone-200 bg-white py-1 shadow-lg">
+                      @if (!subscriptionService.isPro()) {
+                        <div class="px-3 py-2 text-xs text-stone-500">
+                          <span class="rounded bg-coral-500/80 px-1 py-px text-[9px] font-bold text-white">PRO</span>
+                          Downloads require a Pro subscription
+                        </div>
+                      } @else if (readableQualities().length === 0) {
+                        <div class="px-3 py-2 text-xs text-stone-500">
+                          Downloads not yet available for this video
+                        </div>
+                      } @else {
+                        @for (r of readableQualities(); track r.quality) {
+                          <button
+                            (click)="downloadVideo(r.quality)"
+                            class="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-stone-700 transition-colors hover:bg-stone-50"
+                          >
+                            <span class="font-medium">{{ r.quality }}</span>
+                            @if (r.fileSizeBytes) {
+                              <span class="text-xs text-stone-400">{{ formatFileSize(r.fileSizeBytes) }}</span>
+                            }
+                          </button>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Description card ===== -->
+        @if (video()!.description || video()!.viewCount != null) {
+          <div
+            class="mt-3 cursor-pointer rounded-xl border border-stone-200 bg-white p-4 transition-colors hover:bg-stone-50"
+            (click)="toggleDescription()"
+          >
+            <div class="flex items-center gap-2 text-sm font-semibold text-stone-900">
+              <span>{{ formatCount(video()!.viewCount ?? 0) }} views</span>
+              <span class="text-stone-300">&middot;</span>
+              <span class="text-stone-600">{{ timeAgo(video()!.createdAt) }}</span>
+            </div>
+            @if (video()!.description) {
+              <p
+                class="mt-2 whitespace-pre-line text-sm leading-relaxed text-stone-700"
+                [class]="descExpanded() ? '' : 'line-clamp-2'"
+              >{{ video()!.description }}</p>
+              <button class="mt-1.5 text-xs font-semibold text-stone-500 hover:text-stone-800">
+                {{ descExpanded() ? 'Show less' : 'Show more' }}
+              </button>
+            }
+          </div>
+        }
+
+        <!-- ===== Tags & Category ===== -->
+        @if (video()!.categoryName || video()!.tags?.length) {
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            @if (video()!.categoryName) {
+              <span class="inline-flex items-center rounded-full bg-coral-50 px-3 py-1 text-xs font-semibold text-coral-700 ring-1 ring-inset ring-coral-200">
+                {{ video()!.categoryName }}
+              </span>
+            }
+            @for (tag of video()!.tags ?? []; track tag) {
+              <span class="inline-flex items-center rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
+                #{{ tag }}
+              </span>
+            }
+          </div>
+        }
+
+        <!-- ===== Comments card ===== -->
+        @if (video()!.allowComments !== false) {
+        <div class="mt-3 rounded-xl border border-stone-200 bg-white p-4">
+          <h2 class="text-base font-bold text-stone-900">
+            {{ formatCount(video()!.commentCount ?? 0) }} Comments
+          </h2>
+
+          <!-- Add comment -->
+          @if (authService.isAuthenticated()) {
+            <div class="mt-4 flex gap-3 border-t border-stone-100 pt-4">
+              @if (authService.currentUser()?.avatarUrl) {
+                <img [src]="authService.currentUser()!.avatarUrl!" [alt]="authService.currentUser()!.displayName"
+                  class="h-9 w-9 shrink-0 rounded-full object-cover" />
+              } @else {
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-coral-600 text-xs font-bold text-white">
+                  {{ authService.currentUser()?.displayName?.charAt(0)?.toUpperCase() || 'U' }}
+                </div>
+              }
+              <div class="flex-1">
+                <input
+                  type="text"
+                  [(ngModel)]="commentText"
+                  (focus)="commentFocused.set(true)"
+                  (keydown.enter)="submitComment()"
+                  placeholder="Add a comment..."
+                  class="w-full border-b border-stone-200 bg-transparent py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:border-coral-500 focus:outline-none transition-colors"
+                />
+                @if (commentFocused()) {
+                  <div class="mt-2.5 flex justify-end gap-2">
+                    <button
+                      (click)="cancelComment()"
+                      class="rounded-full px-3 py-1.5 text-sm font-medium text-stone-600 hover:bg-stone-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      (click)="submitComment()"
+                      [disabled]="!commentText.trim() || submittingComment()"
+                      class="rounded-full bg-coral-600 px-4 py-1.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-coral-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      @if (submittingComment()) {
+                        <div class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                      } @else {
+                        Comment
+                      }
+                    </button>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Comment list -->
+          @if (comments().length > 0) {
+            <div class="mt-4 divide-y divide-stone-100">
+              @for (comment of comments(); track comment.id) {
+                <div class="group/comment flex gap-3 py-4 first:pt-0">
+                  <div [class]="'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ' + avatarColor(comment.userUuid)">
+                    {{ avatarInitial(comment.userUuid) }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[13px] font-semibold text-stone-800">
+                        @if (isCommentOwner(comment)) {
+                          {{ authService.currentUser()?.displayName || 'You' }}
+                        } @else {
+                          User {{ comment.userUuid.substring(0, 6) }}
+                        }
+                      </span>
+                      <span class="text-xs text-stone-500">{{ timeAgo(comment.createdAt) }}</span>
+                    </div>
+                    <p class="mt-0.5 text-[14px] leading-relaxed text-stone-800">{{ comment.content }}</p>
+
+                    <!-- Comment actions -->
+                    <div class="mt-1.5 flex items-center gap-1">
+                      @if (authService.isAuthenticated()) {
+                        <button
+                          (click)="toggleReplies(comment.id)"
+                          class="rounded-full px-2.5 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                        >
+                          @if (replyState()[comment.id]?.expanded) {
+                            Hide replies
+                          } @else {
+                            Reply
+                          }
+                        </button>
+                      }
+                      @if (isCommentOwner(comment)) {
+                        <button
+                          (click)="deleteComment(comment.id)"
+                          class="rounded-full px-2.5 py-1 text-xs text-stone-400 opacity-0 group-hover/comment:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
+                        >
+                          Delete
+                        </button>
+                      }
+                    </div>
+
+                    <!-- Replies section -->
+                    @if (replyState()[comment.id]?.expanded) {
+                      <div class="mt-3 rounded-lg bg-stone-50 p-3 space-y-3">
+                        <!-- Loading -->
+                        @if (replyState()[comment.id]?.loading && replyState()[comment.id]?.replies?.length === 0) {
+                          <div class="flex items-center gap-2 py-1">
+                            <div class="h-4 w-4 animate-spin rounded-full border-2 border-stone-200 border-t-stone-500"></div>
+                            <span class="text-xs text-stone-500">Loading replies...</span>
+                          </div>
+                        }
+
+                        <!-- Reply list -->
+                        @for (reply of replyState()[comment.id]?.replies ?? []; track reply.id) {
+                          <div class="flex gap-2.5">
+                            <div [class]="'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white ' + avatarColor(reply.userUuid)">
+                              {{ avatarInitial(reply.userUuid) }}
+                            </div>
+                            <div class="min-w-0 flex-1">
+                              <div class="flex items-center gap-2">
+                                <span class="text-xs font-semibold text-stone-800">
+                                  @if (reply.userUuid === authService.currentUser()?.uuid) {
+                                    {{ authService.currentUser()?.displayName || 'You' }}
+                                  } @else {
+                                    User {{ reply.userUuid.substring(0, 6) }}
+                                  }
+                                </span>
+                                <span class="text-xs text-stone-500">{{ timeAgo(reply.createdAt) }}</span>
+                              </div>
+                              <p class="mt-0.5 text-[13px] leading-relaxed text-stone-800">{{ reply.content }}</p>
+                            </div>
+                          </div>
+                        }
+
+                        <!-- Load more replies -->
+                        @if (replyState()[comment.id]?.hasMore) {
+                          <button
+                            (click)="loadMoreReplies(comment.id)"
+                            class="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold text-coral-600 hover:bg-coral-50 transition-colors"
+                          >
+                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                            Show more replies
+                          </button>
+                        }
+
+                        <!-- Reply input -->
+                        @if (authService.isAuthenticated()) {
+                          <div class="flex gap-2.5 border-t border-stone-200 pt-3">
+                            @if (authService.currentUser()?.avatarUrl) {
+                              <img [src]="authService.currentUser()!.avatarUrl!" [alt]="authService.currentUser()!.displayName"
+                                class="h-7 w-7 shrink-0 rounded-full object-cover" />
+                            } @else {
+                              <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-coral-600 text-[10px] font-bold text-white">
+                                {{ authService.currentUser()?.displayName?.charAt(0)?.toUpperCase() || 'U' }}
+                              </div>
+                            }
+                            <div class="flex-1">
+                              <input
+                                type="text"
+                                [ngModel]="replyState()[comment.id]?.replyText ?? ''"
+                                (ngModelChange)="updateReplyText(comment.id, $event)"
+                                (keydown.enter)="submitReply(comment.id)"
+                                placeholder="Reply..."
+                                class="w-full border-b border-stone-200 bg-transparent py-1.5 text-[13px] text-stone-900 placeholder:text-stone-400 focus:border-coral-500 focus:outline-none transition-colors"
+                              />
+                              @if ((replyState()[comment.id]?.replyText ?? '').trim()) {
+                                <div class="mt-2 flex justify-end gap-2">
+                                  <button
+                                    (click)="updateReplyText(comment.id, '')"
+                                    class="rounded-full px-2.5 py-1 text-xs font-medium text-stone-600 hover:bg-stone-200 transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    (click)="submitReply(comment.id)"
+                                    [disabled]="replyState()[comment.id]?.submitting"
+                                    class="rounded-full bg-coral-600 px-3 py-1 text-xs font-semibold text-white hover:bg-coral-700 disabled:opacity-40 transition-all"
+                                  >
+                                    Reply
+                                  </button>
+                                </div>
+                              }
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Loading comments -->
+          @if (commentsLoading()) {
+            <div class="mt-4 flex items-center justify-center gap-2 py-4">
+              <div class="h-5 w-5 animate-spin rounded-full border-2 border-stone-200 border-t-stone-500"></div>
+            </div>
+          }
+
+          <!-- Load more comments -->
+          @if (hasMoreComments() && !commentsLoading()) {
+            <div class="mt-4 flex justify-center border-t border-stone-100 pt-4">
+              <button
+                (click)="loadMoreComments()"
+                class="rounded-full border border-stone-200 px-5 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+              >
+                Show more comments
+              </button>
+            </div>
+          }
+
+          <!-- Empty comments -->
+          @if (!commentsLoading() && comments().length === 0 && (video()!.commentCount ?? 0) === 0) {
+            <div class="mt-4 flex flex-col items-center border-t border-stone-100 py-8 text-center">
+              <svg class="h-8 w-8 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
+              </svg>
+              <p class="mt-2 text-sm text-stone-500">No comments yet</p>
+              @if (authService.isAuthenticated()) {
+                <p class="mt-0.5 text-xs text-stone-400">Be the first to share your thoughts</p>
+              }
+            </div>
+          }
+        </div>
+        } @else {
+          <div class="mt-3 rounded-xl border border-stone-200 bg-white p-4">
+            <div class="flex flex-col items-center py-6 text-center">
+              <svg class="h-8 w-8 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+              <p class="mt-2 text-sm font-medium text-stone-500">Comments are turned off</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ==================== SIDEBAR ==================== -->
+      <div class="w-full shrink-0 lg:w-[360px]">
+        <div class="lg:sticky lg:top-[72px]">
+          <div class="rounded-xl border border-stone-200 bg-white p-4">
+            <h3 class="text-base font-bold text-stone-900">Up next</h3>
+
+            @if (similarVideos().length === 0) {
+              <div class="mt-4 flex flex-col items-center rounded-lg border border-dashed border-stone-200 py-8 text-center">
+                <svg class="mb-2 h-7 w-7 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                </svg>
+                <p class="text-xs text-stone-500">No other videos yet</p>
+              </div>
+            } @else {
+              <div class="mt-3 divide-y divide-stone-100">
+                @for (sv of similarVideos(); track sv.uuid) {
+                  <a
+                    [routerLink]="['/watch', sv.uuid]"
+                    class="group flex gap-3 py-3 first:pt-0 last:pb-0 transition-colors"
+                  >
+                    <!-- Thumbnail -->
+                    <div class="relative h-[82px] w-[146px] shrink-0 overflow-hidden rounded-lg bg-stone-100">
+                      @if (sv.thumbnailUrl) {
+                        <img [src]="sv.thumbnailUrl" [alt]="sv.title" class="h-full w-full object-cover" />
+                      } @else {
+                        <div class="flex h-full items-center justify-center">
+                          <svg class="h-6 w-6 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                          </svg>
+                        </div>
+                      }
+                      @if (sv.durationSeconds) {
+                        <span class="absolute bottom-1 right-1 rounded-md bg-black/80 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white">
+                          {{ formatDuration(sv.durationSeconds) }}
+                        </span>
+                      }
+                    </div>
+                    <!-- Info -->
+                    <div class="flex min-w-0 flex-1 flex-col justify-center gap-1">
+                      <p class="text-[13px] font-medium leading-snug text-stone-900 line-clamp-2 group-hover:text-coral-600 transition-colors">
+                        {{ sv.title }}
+                      </p>
+                      @if (sv.channelName) {
+                        <p class="truncate text-xs text-stone-500">{{ sv.channelName }}</p>
+                      }
+                      <p class="text-xs text-stone-500">
+                        {{ formatCount(sv.viewCount ?? 0) }} views &middot; {{ timeAgo(sv.createdAt) }}
+                      </p>
+                    </div>
+                  </a>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+} @else {
+  <!-- Not found -->
+  <div class="flex flex-col items-center justify-center py-32 text-center">
+    <svg class="mb-4 h-12 w-12 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+      <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+    </svg>
+    <p class="text-base font-semibold text-stone-600">Video not found</p>
+    <p class="mt-1 text-sm text-stone-500">It may have been removed or the link is incorrect.</p>
+    <a routerLink="/explore" class="mt-4 rounded-full bg-stone-900 px-5 py-2 text-sm font-medium text-white hover:bg-stone-800 transition-colors">
+      Browse videos
+    </a>
+  </div>
+}

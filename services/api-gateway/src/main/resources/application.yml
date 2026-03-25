@@ -20,6 +20,10 @@ spring:
               uri: ${CONTENT_SERVICE_URL:http://localhost:8081}
               predicates:
                 - Path=/api/content/**
+            - id: content-service-ws
+              uri: ${CONTENT_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/ws/**
           globalcors:
             cors-configurations:
               '[/**]':
@@ -44,6 +48,9 @@ spring:
 server:
   port: 8090
   address: 0.0.0.0
+  netty:
+    max-initial-line-length: 65536
+  max-http-request-header-size: 65536
 
 management:
   endpoints:
@@ -72,4 +79,19 @@ gateway:
     - /api/auth/resend-verification
     - /api/mod/auth/login
     - /api/mod/auth/refresh
+    - /api/content/videos
+    - /api/content/videos/*
+    - /api/content/videos/*/comments
+    - /api/content/videos/*/view
+    - /api/content/videos/channel/*
+    - /api/content/channels/*
+    - /api/content/videos/download/**
+    - /api/content/streams/live
+    - /api/content/streams/*
+    - /api/content/streams/active/*
+    - /api/content/streams/channel/*
+    - /api/content/streams/rtmp/**
+    - /api/content/categories
+    - /api/content/tags/**
+    - /ws/**
     - /actuator/**

@@ -34,6 +34,16 @@ import { AuthService } from '../../../core/services/auth.service';
         @if (authService.isAuthenticated()) {
           <div class="my-2 border-t border-stone-100"></div>
           <a
+            routerLink="/channels/me"
+            routerLinkActive="bg-stone-100 text-stone-900"
+            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 hover:text-stone-900"
+          >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.125c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v12c0 .621.504 1.125 1.125 1.125Z" />
+            </svg>
+            My Channels
+          </a>
+          <a
             routerLink="/profile"
             routerLinkActive="bg-stone-100 text-stone-900"
             [routerLinkActiveOptions]="{ exact: true }"

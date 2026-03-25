@@ -1,0 +1,132 @@
+<div class="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-stone-900">Edit channel</h1>
+    <p class="mt-1 text-sm text-stone-500">Update your channel's branding and information</p>
+  </div>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-24">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-stone-600"></div>
+    </div>
+  } @else {
+    <!-- Banner Card -->
+    <div class="mb-6 rounded-lg border border-stone-200 bg-white p-6">
+      <h2 class="mb-4 text-sm font-medium text-stone-900">Banner</h2>
+      <div class="mb-3 h-28 overflow-hidden rounded-lg bg-coral-600 sm:h-36">
+        @if (bannerPreview() || channel()?.bannerUrl) {
+          <img
+            [src]="bannerPreview() || channel()!.bannerUrl!"
+            alt="Banner"
+            class="h-full w-full object-cover"
+          />
+        }
+      </div>
+      <div class="flex gap-2">
+        <label
+          class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-coral-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-coral-700"
+        >
+          Upload
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" (change)="onBannerSelected($event)" />
+        </label>
+        @if (channel()?.bannerUrl) {
+          <button
+            (click)="removeBanner()"
+            class="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          >
+            Remove
+          </button>
+        }
+      </div>
+      <p class="mt-2 text-xs text-stone-400">Recommended: 1280 x 320px. JPEG, PNG, WebP, or GIF up to 10 MB.</p>
+    </div>
+
+    <!-- Avatar Card -->
+    <div class="mb-6 rounded-lg border border-stone-200 bg-white p-6">
+      <h2 class="mb-4 text-sm font-medium text-stone-900">Avatar</h2>
+      <div class="flex items-center gap-5">
+        @if (avatarPreview() || channel()?.avatarUrl) {
+          <img
+            [src]="avatarPreview() || channel()!.avatarUrl!"
+            alt="Avatar"
+            class="h-20 w-20 rounded-full border border-stone-200 object-cover"
+          />
+        } @else {
+          <div class="flex h-20 w-20 items-center justify-center rounded-full bg-coral-600 text-2xl font-bold text-white">
+            {{ channel()?.name?.charAt(0)?.toUpperCase() }}
+          </div>
+        }
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <label
+            class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-coral-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-coral-700"
+          >
+            Upload
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" (change)="onAvatarSelected($event)" />
+          </label>
+          @if (channel()?.avatarUrl) {
+            <button
+              (click)="removeAvatar()"
+              class="inline-flex items-center gap-2 rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            >
+              Remove
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Details Card -->
+    <div class="rounded-lg border border-stone-200 bg-white p-6">
+      <h2 class="mb-5 text-sm font-medium text-stone-900">Channel information</h2>
+      <form (ngSubmit)="onSubmit()">
+        <div class="mb-4">
+          <label for="name" class="mb-1.5 block text-sm text-stone-600">Channel Name</label>
+          <input
+            id="name"
+            type="text"
+            [(ngModel)]="name"
+            name="name"
+            required
+            maxlength="100"
+            class="w-full rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-300 focus:outline-none"
+          />
+        </div>
+
+        <div class="mb-5">
+          <label for="description" class="mb-1.5 block text-sm text-stone-600">Description</label>
+          <textarea
+            id="description"
+            [(ngModel)]="description"
+            name="description"
+            maxlength="2000"
+            rows="4"
+            class="w-full resize-none rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:border-stone-300 focus:outline-none"
+            placeholder="Tell viewers what your channel is about..."
+          ></textarea>
+        </div>
+
+        <div class="flex gap-2.5 border-t border-stone-100 pt-5">
+          <button
+            type="submit"
+            [disabled]="saving() || !name.trim()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-coral-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-coral-700 disabled:opacity-50"
+          >
+            @if (saving()) {
+              <div class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+              Saving...
+            } @else {
+              Save changes
+            }
+          </button>
+          <button
+            type="button"
+            (click)="cancel()"
+            class="rounded-lg border border-stone-200 px-5 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:border-stone-300 hover:text-stone-900"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+</div>
