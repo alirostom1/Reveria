@@ -64,7 +64,9 @@ public class SecurityConfig {
                                 "/api/auth/verify-email/validate",
                                 "/api/auth/resend-verification",
                                 "/api/mod/auth/login",
-                                "/api/mod/auth/refresh"
+                                "/api/mod/auth/refresh",
+                                "/api/users/search",
+                                "/api/users/*"
                         ).permitAll()
                         .requestMatchers("/api/mod/**").hasRole("MODERATOR")
                         .requestMatchers("/actuator/**").permitAll()
