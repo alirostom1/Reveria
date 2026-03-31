@@ -19,6 +19,7 @@
 		<module>services/user-service</module>
 		<module>services/api-gateway</module>
 		<module>services/content-service</module>
+		<module>services/social-service</module>
 	</modules>
 
 	<properties>
