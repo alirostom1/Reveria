@@ -67,6 +67,23 @@
     </div>
   }
 
+  <!-- Popular tags -->
+  @if (popularTags().length > 0) {
+    <div class="no-scrollbar mb-5 flex items-center gap-2 overflow-x-auto pb-1">
+      @for (tag of popularTags(); track tag.slug) {
+        <button
+          (click)="selectTag(tag.slug)"
+          class="shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+          [class]="selectedTag() === tag.slug
+            ? 'border-coral-500 bg-coral-50 text-coral-700'
+            : 'border-stone-200 bg-white text-stone-500 hover:border-stone-300 hover:text-stone-700'"
+        >
+          #{{ tag.name }}
+        </button>
+      }
+    </div>
+  }
+
   <!-- Sort bar -->
   <div class="mb-6 flex items-center justify-between">
     <div class="flex items-center gap-1.5">
