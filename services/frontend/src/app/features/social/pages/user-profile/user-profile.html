@@ -1,0 +1,276 @@
+<div class="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <div class="h-8 w-8 animate-spin rounded-full border-2 border-stone-200 border-t-stone-600"></div>
+    </div>
+  } @else if (user(); as u) {
+
+    <!-- Profile card -->
+    <div class="overflow-hidden rounded-2xl border border-stone-100 bg-white">
+      <!-- Banner -->
+      <div class="h-32 bg-gradient-to-br from-coral-500 to-coral-600"></div>
+
+      <!-- Avatar & info -->
+      <div class="relative px-6 pb-6">
+        <div class="-mt-12 flex items-end justify-between">
+          @if (u.avatarUrl) {
+            <img
+              [src]="u.avatarUrl"
+              [alt]="u.displayName"
+              referrerpolicy="no-referrer"
+              class="h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-sm"
+            />
+          } @else {
+            <div class="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-coral-100 text-2xl font-bold text-coral-700 shadow-sm">
+              {{ u.displayName.charAt(0).toUpperCase() }}
+            </div>
+          }
+
+          <!-- Actions -->
+          @if (!isMe() && status(); as s) {
+            <div class="flex items-center gap-2 pb-1">
+
+              <!-- Follow / Unfollow -->
+              @if (!s.blocked && !s.blockedBy) {
+                <button
+                  (click)="toggleFollow()"
+                  [disabled]="actionLoading()"
+                  class="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-medium transition-colors"
+                  [class]="s.following
+                    ? 'border border-stone-200 text-stone-600 hover:bg-stone-50'
+                    : 'bg-stone-900 text-white hover:bg-stone-800'"
+                >
+                  @if (s.following) {
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Following
+                  } @else {
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Follow
+                  }
+                </button>
+              }
+
+              <!-- Friend actions -->
+              @if (!s.blocked && !s.blockedBy) {
+                @if (s.friendshipStatus === 'ACCEPTED') {
+                  <!-- Already friends — show remove -->
+                  <button
+                    (click)="removeFriend()"
+                    [disabled]="actionLoading()"
+                    class="flex items-center gap-1.5 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122Z" />
+                    </svg>
+                    Unfriend
+                  </button>
+                } @else if (s.friendshipStatus === 'PENDING' && s.friendRequestFromMe) {
+                  <!-- I sent a pending request -->
+                  <span class="flex items-center gap-1.5 rounded-lg border border-stone-200 px-4 py-2 text-xs font-medium text-stone-500">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    Request Sent
+                  </span>
+                } @else if (u.allowFriendRequests && s.friendshipStatus !== 'PENDING') {
+                  <!-- Can send friend request -->
+                  <button
+                    (click)="sendFriendRequest()"
+                    [disabled]="actionLoading()"
+                    class="flex items-center gap-1.5 rounded-lg bg-coral-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-coral-700"
+                  >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                    </svg>
+                    Add Friend
+                  </button>
+                }
+              }
+
+              <!-- Block / Unblock (dropdown-style button) -->
+              @if (!s.blockedBy) {
+                <button
+                  (click)="toggleBlock()"
+                  [disabled]="actionLoading()"
+                  class="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+                  [class]="s.blocked
+                    ? 'border border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'text-stone-400 hover:bg-stone-100 hover:text-stone-600'"
+                >
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  {{ s.blocked ? 'Unblock' : 'Block' }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mt-4">
+          <h1 class="text-xl font-bold text-stone-900">{{ u.displayName }}</h1>
+          <p class="text-sm text-stone-500">&#64;{{ u.username }}</p>
+
+          <!-- Relationship badges -->
+          @if (status(); as s) {
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+              @if (s.friendshipStatus === 'ACCEPTED') {
+                <span class="rounded-full bg-sage-50 px-2.5 py-0.5 text-[10px] font-medium text-sage-700">Friends</span>
+              }
+              @if (s.following) {
+                <span class="rounded-full bg-coral-50 px-2.5 py-0.5 text-[10px] font-medium text-coral-700">Following</span>
+              }
+              @if (s.followedBy) {
+                <span class="rounded-full bg-stone-100 px-2.5 py-0.5 text-[10px] font-medium text-stone-600">Follows you</span>
+              }
+              @if (s.blocked) {
+                <span class="rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-medium text-red-600">Blocked</span>
+              }
+            </div>
+          }
+
+          @if (u.bio && !isPrivate()) {
+            <p class="mt-3 text-sm text-stone-600">{{ u.bio }}</p>
+          }
+
+          <p class="mt-2 flex items-center gap-1.5 text-xs text-stone-400">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+            </svg>
+            Joined {{ formatDate(u.createdAt) }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blocked notice -->
+    @if (status()?.blocked) {
+      <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-red-200 py-16 text-center">
+        <svg class="mb-3 h-10 w-10 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+        <p class="text-sm font-medium text-stone-500">You have blocked this user</p>
+        <p class="mt-1 text-xs text-stone-400">Unblock them to see their content</p>
+      </div>
+    } @else if (isPrivate()) {
+      <!-- Private profile notice -->
+      <div class="mt-6 flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 py-16 text-center">
+        <svg class="mb-3 h-10 w-10 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        <p class="text-sm font-medium text-stone-500">This profile is private</p>
+        <p class="mt-1 text-xs text-stone-400">You need to be friends to see their content</p>
+      </div>
+    } @else {
+      <!-- Posts -->
+      <div class="mt-6">
+        <h2 class="mb-3 text-sm font-semibold text-stone-700">Posts</h2>
+
+        @if (postsLoading()) {
+          <div class="flex items-center justify-center py-16">
+            <div class="h-6 w-6 animate-spin rounded-full border-2 border-stone-200 border-t-stone-600"></div>
+          </div>
+        } @else if (posts().length === 0) {
+          <div class="flex flex-col items-center justify-center rounded-xl border border-dashed border-stone-200 py-16 text-center">
+            <svg class="mb-3 h-8 w-8 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+            </svg>
+            <p class="text-sm font-medium text-stone-500">No posts yet</p>
+          </div>
+        } @else {
+          <div class="flex flex-col gap-4">
+            @for (post of posts(); track post.uuid) {
+              <div class="overflow-hidden rounded-xl border border-stone-100 bg-white">
+
+                <!-- Content -->
+                @if (post.content) {
+                  <div class="px-4 pt-4 pb-3">
+                    <p class="whitespace-pre-wrap text-sm text-stone-800">{{ post.content }}</p>
+                  </div>
+                }
+
+                <!-- Media grid -->
+                @if (post.media.length > 0) {
+                  <div
+                    class="grid gap-0.5"
+                    [class]="post.media.length === 1 ? 'grid-cols-1' : 'grid-cols-2'"
+                  >
+                    @for (m of post.media; track m.id) {
+                      @if (m.mediaType === 'IMAGE') {
+                        <img
+                          [src]="m.url"
+                          alt="Post image"
+                          class="w-full object-cover"
+                          [class]="post.media.length === 1 ? 'max-h-96' : 'aspect-square'"
+                        />
+                      } @else {
+                        <video
+                          [src]="m.url"
+                          controls
+                          class="w-full"
+                          [class]="post.media.length === 1 ? 'max-h-96' : 'aspect-square object-cover'"
+                        ></video>
+                      }
+                    }
+                  </div>
+                }
+
+                <!-- Actions row -->
+                <div class="flex items-center gap-4 border-t border-stone-50 px-4 py-2.5">
+                  <span class="flex items-center gap-1.5 text-xs text-stone-400">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+                    </svg>
+                    {{ formatCount(post.likeCount) }}
+                  </span>
+                  <span class="flex items-center gap-1.5 text-xs text-stone-400">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" />
+                    </svg>
+                    {{ formatCount(post.commentCount) }}
+                  </span>
+                  <span class="ml-auto text-[10px] text-stone-300">{{ timeAgo(post.createdAt) }}</span>
+                  @if (isMe()) {
+                    <button
+                      (click)="deletePost(post.uuid)"
+                      class="rounded-lg p-1 text-stone-300 transition-colors hover:bg-red-50 hover:text-red-500"
+                    >
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                      </svg>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (postsHasMore()) {
+            <div class="mt-6 flex justify-center">
+              <button
+                (click)="loadMorePosts()"
+                class="rounded-xl border border-stone-200 px-6 py-2.5 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50"
+              >
+                Load more
+              </button>
+            </div>
+          }
+        }
+      </div>
+    }
+
+  } @else {
+    <!-- User not found -->
+    <div class="flex flex-col items-center justify-center py-20 text-center">
+      <p class="text-sm font-medium text-stone-500">User not found</p>
+      <a routerLink="/social/friends" class="mt-3 text-xs font-medium text-coral-600 hover:text-coral-700">
+        Back to Friends
+      </a>
+    </div>
+  }
+</div>
