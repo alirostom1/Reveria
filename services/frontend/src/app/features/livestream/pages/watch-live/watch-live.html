@@ -59,6 +59,7 @@
                 <a [routerLink]="['/channels', channel()!.uuid]" class="shrink-0">
                   @if (channel()!.avatarUrl) {
                     <img [src]="channel()!.avatarUrl" [alt]="channel()!.name"
+                      referrerpolicy="no-referrer"
                       class="h-10 w-10 rounded-full object-cover ring-2 ring-stone-100" />
                   } @else {
                     <div class="flex h-10 w-10 items-center justify-center rounded-full bg-coral-600 text-sm font-bold text-white">
