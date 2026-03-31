@@ -1,2 +1,16 @@
 .idea
 claude/
+
+# Maven build output
+**/target/
+
+# Node / Angular
+**/node_modules/
+services/frontend/dist/
+services/frontend/.angular/
+
+# Environment secrets
+**/.env
+
+# OS
+.DS_Store

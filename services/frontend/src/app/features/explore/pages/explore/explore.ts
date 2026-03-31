@@ -28,9 +28,11 @@ export class Explore implements OnInit {
   protected readonly totalElements = signal(0);
   protected readonly liveStreams = signal<LiveStream[]>([]);
   protected readonly categories = signal<Category[]>([]);
+  protected readonly popularTags = signal<{ name: string; slug: string }[]>([]);
 
   // Filters
   protected readonly selectedCategory = signal('');
+  protected readonly selectedTag = signal('');
   protected readonly selectedSort = signal('latest');
   protected searchQuery = '';
   private appliedSearch = '';
@@ -38,6 +40,7 @@ export class Explore implements OnInit {
 
   ngOnInit(): void {
     this.loadCategories();
+    this.loadPopularTags();
     this.loadVideos(true);
     this.loadLiveStreams();
   }
@@ -46,6 +49,14 @@ export class Explore implements OnInit {
     this.videoService.listCategories().subscribe({
       next: (res) => {
         if (res.data) this.categories.set(res.data);
+      },
+    });
+  }
+
+  private loadPopularTags(): void {
+    this.videoService.listPopularTags().subscribe({
+      next: (res) => {
+        if (res.data) this.popularTags.set(res.data.map((t) => ({ name: t.name, slug: t.slug })));
       },
     });
   }
@@ -60,6 +71,11 @@ export class Explore implements OnInit {
 
   protected selectCategory(slug: string): void {
     this.selectedCategory.set(slug === this.selectedCategory() ? '' : slug);
+    this.resetAndLoad();
+  }
+
+  protected selectTag(slug: string): void {
+    this.selectedTag.set(slug === this.selectedTag() ? '' : slug);
     this.resetAndLoad();
   }
 
@@ -94,6 +110,7 @@ export class Explore implements OnInit {
 
     const filters: any = {};
     if (this.selectedCategory()) filters.category = this.selectedCategory();
+    if (this.selectedTag()) filters.tag = this.selectedTag();
     if (this.appliedSearch) filters.search = this.appliedSearch;
     if (this.selectedSort() !== 'latest') filters.sort = this.selectedSort();
 

@@ -16,11 +16,13 @@ pipeline {
                     env.BUILD_USER_SERVICE = changes.contains('user-service/') ? 'true' : 'false'
                     env.BUILD_API_GATEWAY = changes.contains('api-gateway/') ? 'true' : 'false'
                     env.BUILD_FRONTEND = changes.contains('frontend/') ? 'true' : 'false'
+                    env.BUILD_SOCIAL_SERVICE = changes.contains('social-service/') ? 'true' : 'false'
 
                     echo "Changes detected:\n${changes}"
                     echo "Build user-service: ${env.BUILD_USER_SERVICE}"
                     echo "Build api-gateway: ${env.BUILD_API_GATEWAY}"
                     echo "Build frontend: ${env.BUILD_FRONTEND}"
+                    echo "Build social-service: ${env.BUILD_SOCIAL_SERVICE}"
                 }
             }
         }
@@ -45,6 +47,13 @@ pipeline {
                     when { expression { env.BUILD_FRONTEND == 'true' } }
                     steps {
                         build job: 'frontend', wait: true
+                    }
+                }
+
+                stage('Social Service') {
+                    when { expression { env.BUILD_SOCIAL_SERVICE == 'true' } }
+                    steps {
+                        build job: 'social-service', wait: true
                     }
                 }
             }

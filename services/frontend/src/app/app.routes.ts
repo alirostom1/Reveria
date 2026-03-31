@@ -23,6 +23,10 @@ export const routes: Routes = [
     loadChildren: () => import('./features/livestream/livestream.routes').then((m) => m.livestreamRoutes),
   },
   {
+    path: 'social',
+    loadChildren: () => import('./features/social/social.routes').then((m) => m.socialRoutes),
+  },
+  {
     path: 'auth',
     loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes),
   },

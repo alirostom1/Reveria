@@ -12,6 +12,6 @@ storage:
     endpoint: http://localhost:9000
 
 livestream:
-  rtmp-host: 192.168.1.10
+  rtmp-host: 192.168.11.110
   rtmp-port: 1935
-  hls-base-url: http://192.168.1.10:8088/hls
+  hls-base-url: http://192.168.11.110:8088/hls
