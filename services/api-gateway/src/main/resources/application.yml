@@ -1,6 +1,8 @@
 spring:
   application:
     name: api-gateway
+  codec:
+    max-in-memory-size: 50MB
   config:
     import: optional:file:.env[.properties]
   profiles:
@@ -15,7 +17,11 @@ spring:
             - id: user-service
               uri: ${USER_SERVICE_URL:http://localhost:8080}
               predicates:
-                - Path=/api/auth/**,/api/mod/**,/api/profile/**,/api/user/**
+                - Path=/api/auth/**,/api/mod/**,/api/profile/**,/api/user/**,/api/users/**
+            - id: social-service
+              uri: ${SOCIAL_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/social/**
             - id: content-service
               uri: ${CONTENT_SERVICE_URL:http://localhost:8081}
               predicates:
@@ -94,4 +100,7 @@ gateway:
     - /api/content/categories
     - /api/content/tags/**
     - /ws/**
+    - /api/users/search
+    - /api/users/*
+    - /api/social/posts/feed/public
     - /actuator/**
